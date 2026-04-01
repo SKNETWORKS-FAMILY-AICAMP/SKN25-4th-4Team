@@ -14,9 +14,15 @@ __pycache__/
 .Python
 
 # 데이터베이스 & 데이터
-chroma_db/
-data/raw/
-data/processed/
+chroma_db/*
+!chroma_db/.gitkeep
+data/raw/*
+!data/raw/.gitkeep
+!data/raw/guidelines/
+data/raw/guidelines/*
+!data/raw/guidelines/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
 *.db
 *.sqlite
 
