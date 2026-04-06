@@ -483,10 +483,10 @@ def _structure_paragraphs(answer: str) -> str:
 
 
 def postprocess(state: GraphState) -> dict:
-    """환각 검증 + 한국어 재작성 + 안전 문구 + 서론/본론/결론 구조화 + 근거 유무 재판정."""
+    """환각 검증 + 한국어 재작성 + 안전 문구 + 서론/본론/결론 구조화."""
     raw = state.get("raw_answer", "")
 
-    # 1. 환각 검증
+    # 1. 환각 검증 (PMID 기반 → 논문 제목 기반 출처로 변경되어 pass-through)
     verified = _verify_citations(raw)
 
     # 2. 한국어 재작성
