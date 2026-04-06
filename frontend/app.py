@@ -8,11 +8,7 @@ import streamlit as st
 
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
-# ── Page config ──
-
 st.set_page_config(page_title="BioRAG", page_icon="🧬", layout="wide")
-
-# ── CSS ──
 
 st.markdown("""
 <style>
@@ -58,12 +54,6 @@ st.markdown("""
     font-size: 12px; font-weight: 700;
     padding: 3px 10px; border-radius: 20px; margin: 6px 4px 6px 0;
 }
-.badge-warn {
-    display: inline-flex; align-items: center; gap: 4px;
-    background: #FEF9C3; color: #854D0E;
-    font-size: 12px; font-weight: 700;
-    padding: 3px 10px; border-radius: 20px; margin: 6px 0;
-}
 .badge-weak {
     display: inline-flex; align-items: center; gap: 4px;
     background: #FEF9C3; color: #854D0E;
@@ -95,7 +85,6 @@ st.markdown("""
     border-radius: 4px; overflow: hidden;
 }
 .score-bar-fill { height: 100%; border-radius: 4px; }
-.score-label { font-size: 11px; color: #64748B; font-weight: 600; min-width: 36px; text-align: right; }
 
 .combo-warning {
     background: #FFFBEB;
@@ -150,17 +139,17 @@ def check_backend_health() -> dict | None:
         return None
 
 
-# ── 답변 렌더링 ──
+# ── 렌더링 헬퍼 ──
 
 def render_score_bar(score: float) -> str:
     pct = int(score * 100)
     color = "#22C55E" if score >= 0.75 else "#F59E0B" if score >= 0.5 else "#EF4444"
     return (
-        f'<div class="score-bar-wrap">'
-        f'<span style="font-size:11px;color:#64748B;font-weight:600;min-width:60px">논문 관련도</span>'
+        '<div class="score-bar-wrap">'
+        '<span style="font-size:11px;color:#64748B;font-weight:600;min-width:60px">논문 관련도</span>'
         f'<div class="score-bar-bg"><div class="score-bar-fill" style="width:{pct}%;background:{color}"></div></div>'
-        f'<span class="score-label">{pct}%</span>'
-        f'</div>'
+        f'<span style="font-size:11px;color:#64748B;font-weight:600;min-width:36px;text-align:right">{pct}%</span>'
+        '</div>'
     )
 
 
@@ -169,93 +158,95 @@ def render_source_pills(sources: list[dict]) -> str:
         return ""
     pills = []
     for s in sources[:5]:
-        label = s.get("journal") or s.get("source_type", "출처")
-        year = s.get("year", "")
+        label = (s.get("journal") or s.get("source_type", "출처")).strip()
+        year = s.get("year", "").strip()
+        display = f"{label} {year}".strip()
         url = s.get("url", "")
         pmid = s.get("pmid", "")
-
         if url:
-            pills.append(f'<a class="pill-src" href="{url}" target="_blank">{label} {year}</a>')
+            pills.append(f'<a class="pill-src" href="{url}" target="_blank">{display}</a>')
         elif pmid:
             pills.append(
-                f'<a class="pill-src" href="https://pubmed.ncbi.nlm.nih.gov/{pmid}/" '
-                f'target="_blank">{label} {year}</a>'
+                f'<a class="pill-src" href="https://pubmed.ncbi.nlm.nih.gov/{pmid}/"'
+                f' target="_blank">{display}</a>'
             )
         else:
-            pills.append(f'<span class="pill-src">{label} {year}</span>')
-
+            pills.append(f'<span class="pill-src">{display}</span>')
     return f'<div class="pill-wrap">{"".join(pills)}</div>'
 
 
 def render_answer_card(result: dict) -> str:
     answer = result.get("answer", "")
     paper_sources = result.get("paper_sources", [])
-    aux_sources = result.get("aux_sources", [])
-    has_evidence = result.get("has_paper_evidence", True)
+    has_evidence = result.get("has_paper_evidence", False)
+    weak = result.get("weak_evidence", False)
     paper_score = result.get("paper_score", 0.0)
     category = result.get("category", "")
     query_type = result.get("query_type", "general")
     matched = result.get("matched_terms", [])
 
-    # 답변 본문 — HTML 태그 완전 제거 후 파싱
-    clean_answer = re.sub(r"<[^>]+>", "", answer)  # HTML 태그 제거
-    clean_answer = re.sub(r'(?<!\n)(※)', r'\n\n\1', clean_answer)
-    lines = clean_answer.split("\n")
+    # ── 답변 본문 ──
+    clean = re.sub(r"<[^>]+>", "", answer)
+    clean = re.sub(r'(?<!\n)(※)', r'\n\n\1', clean)
     body_parts = []
-    for line in lines:
-        stripped = line.strip()
-        if not stripped:
-            body_parts.append("<br>")
-        elif "⚠️" in stripped or "의사 또는 약사와 상담" in stripped:
-            body_parts.append(f'<div class="combo-warning">{stripped}</div>')
-        elif "※ 검색된 논문의 관련도가 낮아" in stripped:
-            pass
+    for line in clean.split("\n"):
+        s = line.strip()
+        if not s:
+            continue
+        if "⚠️" in s or "의사 또는 약사와 상담" in s:
+            body_parts.append(f'<div class="combo-warning">{s}</div>')
+        elif "※ 검색된 논문의 관련도가 낮아" in s:
+            continue
         else:
-            body_parts.append(f"<p style='margin:4px 0'>{stripped}</p>")
-    body_html = "<div style='margin-top:12px'>" + "\n".join(body_parts) + "<div style='margin-bottom:12px'></div></div>" 
+            body_parts.append(f"<p style='margin:4px 0'>{s}</p>")
+    body_html = "\n".join(body_parts)
 
-    # 근거 뱃지
-    if has_evidence:
+    # ── 근거 뱃지 ──
+    if has_evidence and not weak:
         badge = '<div class="badge-ok">✓ 논문 근거 있음</div>'
+    elif has_evidence and weak:
+        badge = '<div class="badge-weak">△ 간접 근거</div>'
     else:
         badge = '<div class="badge-none">✗ 직접 근거 없음</div>'
 
-    # score 바
-    score_html = render_score_bar(paper_score) if has_evidence else ""
+    # ── 점수 바 (근거가 있을 때만) ──
+    score_html = render_score_bar(paper_score) if has_evidence and paper_score > 0 else ""
 
-    # 출처 pills
+    # ── 출처 pills ──
     source_html = render_source_pills(paper_sources)
 
-    # 용어 매칭 정보
+    # ── 용어 매칭 ──
     term_html = ""
     if matched:
-        term_pills = " ".join(
+        tp = " ".join(
             f'<span class="meta-pill">{t["alias"]} → {", ".join(t.get("expansions", [])[:3])}</span>'
-            for t in matched
+            for t in matched if t.get("alias")
         )
-        term_html = f'<div style="margin-top:8px">{term_pills}</div>'
+        if tp:
+            term_html = f'<div style="margin-top:8px">{tp}</div>'
 
-    # 메타 바
-    meta_pills = []
+    # ── 메타 바 (의미 있는 값만) ──
+    mp = []
     if category:
-        meta_pills.append(f'<span class="meta-pill">📂 {category}</span>')
-    if query_type:
-        meta_pills.append(f'<span class="meta-pill">🏷️ {query_type}</span>')
+        mp.append(f'<span class="meta-pill">📂 {category}</span>')
+    if query_type and query_type != "general":
+        mp.append(f'<span class="meta-pill">🏷️ {query_type}</span>')
     if result.get("needs_web"):
-        meta_pills.append('<span class="meta-pill">🌐 웹검색 사용</span>')
-    meta_html = f'<div class="meta-bar">{"".join(meta_pills)}</div>' if meta_pills else ""
+        mp.append('<span class="meta-pill">🌐 웹검색 사용</span>')
+    meta_html = f'<div class="meta-bar">{"".join(mp)}</div>' if mp else ""
 
-    return f"""
-    <div class="res-card">
-        <h3>🧬 BioRAG 분석 리포트</h3>
-        {badge}
-        {score_html}
-        {body_html}
-        {source_html}
-        {term_html}
-        {meta_html}
-    </div>
-    """
+    # ── 카드 조립 ──
+    return (
+        '<div class="res-card">'
+        '<h3>🧬 BioRAG 분석 리포트</h3>'
+        f'{badge}'
+        f'{score_html}'
+        f'{body_html}'
+        f'{source_html}'
+        f'{term_html}'
+        f'{meta_html}'
+        '</div>'
+    )
 
 
 # ── Session ──
@@ -266,6 +257,8 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = {}
 if "current_chat_id" not in st.session_state:
     st.session_state.current_chat_id = None
+if "pending_input" not in st.session_state:
+    st.session_state.pending_input = None
 
 
 # ── Sidebar ──
@@ -279,7 +272,6 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    # 서버 상태
     health = check_backend_health()
     if health and health.get("status") == "ok":
         cols = health.get("collections", {})
@@ -295,20 +287,15 @@ with st.sidebar:
         st.rerun()
 
     st.caption("예시 질문")
-    examples = [
-        "마운자로 부작용이 뭐야?",
-        "올레샷 먹으면 효과 있어?",
-        "콜라겐 보충제가 피부에 도움 돼?",
-        "오메가3가 심혈관에 도움 되나?",
-        "간헐적 단식의 대사 효과는?",
-    ]
-    for ex in examples:
+    for ex in [
+        "마운자로의 효과",
+        "콜라겐이 피부에 도움이 돼?",
+    ]:
         if st.button(f"💬 {ex}", key=f"ex_{ex}", use_container_width=True):
-            st.session_state.messages.append({"role": "user", "content": ex})
+            st.session_state.pending_input = ex
             st.session_state.current_chat_id = ex[:15]
             st.rerun()
 
-    # 대화 기록
     if st.session_state.chat_history:
         st.divider()
         st.caption("대화 기록")
@@ -326,7 +313,7 @@ with st.sidebar:
                 st.rerun()
 
 
-# ── Main chat area ──
+# ── Main ──
 
 st.title("🧬 BioRAG")
 st.caption("논문 기반 건강 팩트체커 — PubMed + MedlinePlus + Glossary")
@@ -338,7 +325,11 @@ for m in st.session_state.messages:
         else:
             st.markdown(m["content"], unsafe_allow_html=True)
 
-if user_input := st.chat_input("건강 트렌드에 대해 물어보세요!"):
+# 예시 버튼 or 직접 입력
+pending = st.session_state.pop("pending_input", None)
+user_input = st.chat_input("건강 트렌드에 대해 물어보세요!") or pending
+
+if user_input:
     if st.session_state.current_chat_id is None:
         st.session_state.current_chat_id = user_input[:15]
 
@@ -351,11 +342,14 @@ if user_input := st.chat_input("건강 트렌드에 대해 물어보세요!"):
             result = call_backend(user_input)
 
         if result:
+            clean_text = re.sub(r"<[^>]+>", "", result.get("answer", ""))
+            result["answer"] = clean_text
+
             card_html = render_answer_card(result)
             st.markdown(card_html, unsafe_allow_html=True)
             st.session_state.messages.append({
                 "role": "assistant",
-                "content": result.get("answer", ""),
+                "content": clean_text,
                 "result": result,
             })
         else:
@@ -363,7 +357,6 @@ if user_input := st.chat_input("건강 트렌드에 대해 물어보세요!"):
             st.warning(fallback)
             st.session_state.messages.append({"role": "assistant", "content": fallback})
 
-        # 기록 저장
         st.session_state.chat_history[st.session_state.current_chat_id] = (
             st.session_state.messages.copy()
         )
