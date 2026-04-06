@@ -1,0 +1,15 @@
+{
+  "official_domains": [
+    "nih.gov",
+    "nlm.nih.gov",
+    "ncbi.nlm.nih.gov",
+    "medlineplus.gov",
+    "fda.gov"
+  ],
+  "trend_domains": [
+    "medicalnewstoday.com",
+    "healthline.com",
+    "webmd.com",
+    "health.harvard.edu"
+  ]
+}

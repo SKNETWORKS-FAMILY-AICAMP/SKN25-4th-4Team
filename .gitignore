@@ -1,45 +1,19 @@
-# 환경 변수
-.env
-
-# 가상환경
-.venv/
-venv/
-env/
-
-# Python
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-.Python
+.env
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
 
-# 데이터베이스 & 데이터
-chroma_db/*
-!chroma_db/.gitkeep
-data/raw/*
-!data/raw/.gitkeep
-!data/raw/guidelines/
-data/raw/guidelines/*
-!data/raw/guidelines/.gitkeep
-data/processed/*
-!data/processed/.gitkeep
-*.db
-*.sqlite
-
-# OS
-.DS_Store
-Thumbs.db
+# data
+backend/data/
+data/
 
 # IDE
-.vscode/
 .idea/
+.vscode/
 *.swp
-*.swo
-
-# log
-.logs/
-*.log
-
-# jupyter
-.ipynb_checkpoints/
-*.ipynb
+.DS_Store
+.env
