@@ -39,17 +39,3 @@ def route_category(
     return max(votes, key=votes.get)
 
 
-def needs_web_fallback(
-    question: str,
-    matched_terms: dict[str, Any],
-) -> bool:
-    """Tavily 웹 검색 fallback이 필요한지 판별한다."""
-    latest_keywords = ["최근", "최신", "요즘", "현재", "트렌드", "trend"]
-    if any(k in question for k in latest_keywords):
-        return True
-
-    slang_signals = ["루틴", "샷", "조합", "먹어도", "같이"]
-    if any(k in question for k in slang_signals) and matched_terms:
-        return True
-
-    return False

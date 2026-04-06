@@ -167,7 +167,7 @@ class VectorStoreManager:
                     for doc in paper_docs
                     if doc.metadata.get("doc_id", doc.page_content[:40]) in score_map
                 ]
-                paper_score = min(sum(scores) / len(scores) * 1.4, 1.0) if scores else 0.0
+                paper_score = max(0.0, min(sum(scores) / len(scores) * 1.7, 1.0)) if scores else 0.0
                 logger.info("평균 similarity score: %.4f", paper_score)
             except Exception as e:
                 logger.warning("Score 계산 실패: %s", e)

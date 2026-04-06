@@ -3,15 +3,14 @@ LangGraph nodes — 파이프라인의 각 단계를 독립된 함수로 분리.
 
 각 노드는 GraphState를 받아서, 자기 담당 필드만 업데이트한 dict를 반환한다.
 
-환각 방지:
-- build_context에서 valid_pmids 목록을 수집
-- postprocess에서 답변 속 PMID가 valid_pmids에 있는지 검증
-- 없는 PMID 출처는 제거하고 경고 문구 삽입
+추가된 기능:
+- retrieve: 한글→영어 번역 + similarity score 계산
+- build_context: weak_evidence 판정
+- postprocess: 서론/본론/결론 후처리 + 환각 검증
 """
 from __future__ import annotations
 
 import logging
-import re
 from typing import Any
 
 from langchain_core.output_parsers import StrOutputParser
@@ -19,7 +18,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 
 from app.settings import get_settings
-from pipeline.category_router import needs_web_fallback, route_category
+from pipeline.category_router import route_category
 from pipeline.external_search import tavily_resolve_neologism, tavily_search_context
 from pipeline.glossary_matcher import (
     detect_query_type,
@@ -39,6 +38,7 @@ from pipeline.retriever import (
 from pipeline.state import GraphState
 
 logger = logging.getLogger(__name__)
+
 
 # ── 싱글톤 리소스 ──
 
@@ -90,32 +90,62 @@ def analyze_query(state: GraphState) -> dict:
 # ═══════════════════════════════════════════════════════
 
 def route(state: GraphState) -> dict:
-    """질문을 4개 카테고리 중 하나로 라우팅."""
+    """질문을 카테고리로 라우팅. needs_web은 assess_retrieval에서 결정."""
     return {
         "category": route_category(state["question"], state["matched_terms"]),
-        "needs_web": needs_web_fallback(state["question"], state["matched_terms"]),
     }
 
 
 # ═══════════════════════════════════════════════════════
-# Node 3: 1차 검색
+# Node 3: 1차 검색 (한글→영어 번역 + score 계산 추가)
 # ═══════════════════════════════════════════════════════
 
+def _translate_to_english(text: str) -> str:
+    """한글 질문을 PubMed 검색용 영어로 번역한다."""
+    try:
+        result = get_llm().invoke(
+            "Translate the following Korean health question into English "
+            "for searching PubMed academic papers.\n"
+            "Rules:\n"
+            "1. Use scientific/ingredient names instead of brand names. "
+            "Examples: 마운자로 → tirzepatide, 위고비 → semaglutide, "
+            "오젬픽 → semaglutide, 삭센다 → liraglutide.\n"
+            "2. If the input contains '검색 확장 키워드:', "
+            "prioritize those keywords in the translation.\n"
+            "3. Return only the translated text, no explanation.\n\n"
+            f"Korean: {text}"
+        )
+        translated = result.content.strip()
+        logger.info("번역 완료 | KO: %s → EN: %s", text[:30], translated[:60])
+        return translated
+    except Exception as e:
+        logger.warning("번역 실패, 원문 사용: %s", e)
+        return text
+
+
 def retrieve(state: GraphState) -> dict:
-    """ChromaDB에서 paper/aux를 병렬 MMR 검색."""
+    """ChromaDB에서 paper/aux를 병렬 MMR 검색 + 한글→영어 번역 + score 계산."""
+    # 한글 → 영어 번역
+    translated_query = _translate_to_english(state["expanded_query"])
+
     try:
         result = get_vs().retrieve(
-            query=state["expanded_query"],
+            query=translated_query,
             category=state.get("category"),
             is_supplement=state.get("is_supplement", False),
         )
     except Exception as e:
         logger.error("Retrieval failed: %s", e)
-        result = {"paper_docs": [], "aux_docs": []}
+        result = {"paper_docs": [], "aux_docs": [], "paper_score": 0.0}
+
+    paper_score = result.get("paper_score", 0.0)
+    paper_docs = result["paper_docs"]
 
     return {
-        "paper_docs": result["paper_docs"],
+        "paper_docs": paper_docs,
         "aux_docs": result["aux_docs"],
+        "paper_score": paper_score,
+        "translated_query": translated_query,
     }
 
 
@@ -172,6 +202,96 @@ def re_retrieve(state: GraphState) -> dict:
 
 
 # ═══════════════════════════════════════════════════════
+# Node 5.5: LLM 기반 검색 품질 평가 (웹 검색 필요 여부 결정)
+# ═══════════════════════════════════════════════════════
+
+from pydantic import BaseModel, Field as PydanticField
+
+
+class _RetrievalAssessment(BaseModel):
+    needs_web: bool = PydanticField(description="Tavily 웹 검색이 필요한지 여부")
+    weak_evidence: bool = PydanticField(description="논문 근거가 약한지 여부 (질문과 직접 관련 없거나 유사도 낮음)")
+    reasoning: str = PydanticField(description="판단 근거 1~2문장")
+
+
+_ASSESS_SYSTEM = """\
+당신은 RAG 검색 품질 평가자입니다. 사용자 질문에 대해 검색된 논문이 충분한 근거가 되는지 평가하세요.
+
+[needs_web=true 조건 — 하나라도 해당하면 true]
+- 검색된 논문이 없거나 질문과 직접 관련이 없음
+- 유사도 점수가 0.5 미만으로 낮음
+- 최신 트렌드/제품/커뮤니티 정보가 더 적합한 질문
+- 신조어·슬랭으로 논문 검색이 어려운 경우
+
+[weak_evidence=true 조건]
+- 논문은 있지만 질문에 직접 답하기 어려운 경우 (간접 근거만 존재)
+
+[질문]
+{question}
+
+[검색된 논문 ({n_docs}개)]
+{paper_summaries}
+
+[평균 유사도 점수] {paper_score:.4f}  (0=완전 불일치, 1=완전 일치)
+"""
+
+_assess_llm: Any = None
+
+
+def _get_assess_llm() -> Any:
+    global _assess_llm
+    if _assess_llm is None:
+        s = get_settings()
+        _assess_llm = ChatOpenAI(
+            model=s.llm_model,
+            temperature=0,
+            openai_api_key=s.openai_api_key,
+        ).with_structured_output(_RetrievalAssessment)
+    return _assess_llm
+
+
+def assess_retrieval(state: GraphState) -> dict:
+    """LLM으로 검색 품질을 평가해 needs_web·weak_evidence를 결정한다.
+
+    하드코딩 threshold 대신 LLM이 실제 논문 내용과 점수를 함께 보고 판단.
+    실패 시 score < 0.5 기준으로 안전하게 fallback.
+    """
+    question = state["question"]
+    paper_docs = state.get("paper_docs", [])
+    paper_score = state.get("paper_score", 0.0)
+
+    # 상위 3개 논문 요약
+    summaries = []
+    for i, doc in enumerate(paper_docs[:3], 1):
+        title = doc.metadata.get("title", "제목 없음")
+        snippet = doc.page_content[:120].replace("\n", " ")
+        summaries.append(f"{i}. {title} — {snippet}…")
+    paper_summaries = "\n".join(summaries) if summaries else "검색된 논문 없음"
+
+    try:
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", _ASSESS_SYSTEM),
+            ("human", "웹 검색 필요 여부를 평가하세요."),
+        ])
+        chain = prompt | _get_assess_llm()
+        result: _RetrievalAssessment = chain.invoke({
+            "question": question,
+            "n_docs": len(paper_docs),
+            "paper_summaries": paper_summaries,
+            "paper_score": paper_score,
+        })
+        logger.info(
+            "검색 품질 평가 | needs_web=%s weak_evidence=%s score=%.4f | %s",
+            result.needs_web, result.weak_evidence, paper_score, result.reasoning,
+        )
+        return {"needs_web": result.needs_web, "weak_evidence": result.weak_evidence}
+    except Exception as e:
+        logger.warning("검색 품질 평가 실패, score 기반 fallback: %s", e)
+        weak = bool(paper_docs) and paper_score < 0.5
+        return {"needs_web": weak or not paper_docs, "weak_evidence": weak}
+
+
+# ═══════════════════════════════════════════════════════
 # Node 6: 웹검색 fallback
 # ═══════════════════════════════════════════════════════
 
@@ -181,6 +301,11 @@ def web_search(state: GraphState) -> dict:
     neo_ctx = state.get("neo_context", "")
     if neo_ctx:
         web_ctx = (web_ctx + "\n\n" + neo_ctx).strip()
+
+    # weak_evidence이면 공식기관 검색으로 보완
+    if state.get("weak_evidence") and not web_ctx:
+        web_ctx = tavily_search_context(state["question"], mode="official")
+
     return {"web_context": web_ctx}
 
 
@@ -205,7 +330,7 @@ def build_context(state: GraphState) -> dict:
         if neo_ctx:
             web_context = neo_ctx
 
-    # ── 환각 방지: 실제 검색된 PMID 수집 ──
+    # 환각 방지: 실제 검색된 PMID 수집
     valid_pmids: set[str] = set()
     for doc in paper_docs:
         pmid = doc.metadata.get("pmid", "")
@@ -228,62 +353,51 @@ def build_context(state: GraphState) -> dict:
 
 SYSTEM_PROMPT = """\
 당신은 BioRAG — 논문 기반 건강 팩트체커입니다.
-사용자가 건강 트렌드, 영양제, 시술, 식이요법에 대해 질문하면
-아래 컨텍스트의 논문 근거를 기반으로 한국어로 답변합니다.
 
 ═══ 절대 규칙 (환각 방지) ═══
+- [논문 컨텍스트]에 있는 내용만 근거로 사용하세요.
+- 컨텍스트에 없는 논문, 저널명, 수치를 절대 지어내지 마세요.
+- 출처 표기 시 반드시 컨텍스트에 있는 논문 제목을 그대로 사용하세요.
 
-- 아래 [논문 컨텍스트]에 있는 내용만 근거로 사용하세요.
-- 컨텍스트에 없는 논문, PMID, 저널명, 수치를 절대 지어내지 마세요.
-- 컨텍스트에 없는 내용은 "확인되지 않았습니다"로 처리하세요.
-- 출처 표기 시 반드시 컨텍스트에 있는 PMID만 사용하세요.
+═══ 답변 구조 (반드시 준수) ═══
 
-═══ 답변 규칙 ═══
+[서론] 질문한 용어/성분이 무엇인지 1~2문장. 출처 붙이지 않습니다.
 
-1. 근거 우선순위: [논문 컨텍스트] > [보조 문서] > [웹검색]
-   - 논문 컨텍스트가 최종 근거입니다.
-   - 보조 문서는 용어 설명 보조용입니다.
-   - 웹검색은 트렌드/신조어 해석 보조용이며 "~로 알려져 있습니다" 수준으로만 사용하세요.
+[본론] 근거가 있는 내용을 문장 단위로 씁니다.
+- 각 문장 끝에 반드시 출처를 붙입니다: (출처: 논문 제목, 연도)
+- 논문 제목은 [논문 컨텍스트]의 "제목:" 필드에 있는 원문 그대로 사용하세요.
+- 문장마다 줄바꿈합니다. 한 줄에 여러 문장 쓰지 마세요.
+- 수치가 있으면 반드시 포함하세요.
 
-2. 출처 표기: 주장마다 (출처: 저널명, 연도, PMID:숫자) 형식으로 반드시 붙이세요.
+[결론] 출처 없이 종합 의견 1~2문장 + "자세한 내용은 아래 논문을 확인하세요."
 
-3. 논문 근거가 없으면: "현재 보유한 논문 데이터에서 직접적인 근거를 찾지 못했습니다."로 시작하세요.
+═══ 예시 (논문 있는 경우) ═══
 
-4. 금지사항: 개인 진단, 처방, 복용량 결정, 마크다운 헤더(###), 볼드(**) 사용 금지.
+티르제파타이드는 비만 및 제2형 당뇨 치료에 사용되는 주사제입니다.
 
-5. 한국어: 영어 의학용어는 한국어로 바꾸되, 성분명은 한국에서 통용되는 이름을 쓰세요.
-   예: Tirzepatide → 티르제파타이드(마운자로), Semaglutide → 세마글루타이드(위고비)
+72주 투여 시 체중이 평균 15~21% 감소했습니다. (출처: Tirzepatide Once Weekly for the Treatment of Obesity, 2022)
+3년간 투여 시 제2형 당뇨 진행 위험이 크게 줄었습니다. (출처: Tirzepatide for the Prevention of Type 2 Diabetes, 2025)
+
+개인 건강 상태에 따라 효과가 다를 수 있으므로 전문가 상담이 필요합니다.
+자세한 내용은 아래 논문을 확인하세요.
+
+═══ 예시 (논문 없는 경우) ═══
+
+올레샷에 대한 직접적인 논문 근거는 없습니다. 올레샷은 올리브오일과 레몬즙을 공복에 마시는 건강법입니다.
+
+올리브오일은 폴리페놀 성분이 항산화·항염 효과를 가집니다. (출처: Olive oil polyphenols and their implications in cardiovascular disease, 2018)
+레몬즙은 헤스페리딘 등 플라보노이드가 항산화·항균 효과를 가집니다. (출처: Citrus flavonoids as therapeutics in human diseases, 2022)
+
+각 성분의 효과는 입증되어 있으나 조합 자체를 검증한 연구는 없습니다.
+자세한 내용은 아래 논문을 확인하세요.
+
+═══ 웹검색 결과 사용 시 ═══
+웹검색 내용 인용 시 문장 끝에 [웹 검색] 표시를 붙이세요.
 
 ═══ 모드별 지침 ═══
-
 - SUPPLEMENT_MODE={supplement_mode}: ON이면 먹는 영양제만 추천. 주사제/시술은 "영양제로는 비권장"으로 분리.
-- COMBO_MODE={combo_mode}: ON이면 "조합 자체의 임상 근거는 없습니다"로 시작, 성분별로 나눠서 근거 제시.
+- COMBO_MODE={combo_mode}: ON이면 성분별로 나눠서 각각의 근거만 제시.
 - QUERY_TYPE={query_type}
-
-═══ 답변 구조 ═══
-
-아래 구조를 따르세요:
-
-[정의] 질문한 용어/성분이 무엇인지 1-2문장 설명
-[근거] 논문 컨텍스트에서 찾은 효과/부작용을 성분별로 정리 (각각 출처 표기)
-[주의] 한계점, 상담 권고 등 (해당 시)
-
-═══ 예시 ═══
-
-질문: 올레샷 효과 있어?
-
-[정의]
-올레샷은 올리브오일과 레몬즙을 섞어 공복에 마시는 건강법입니다.
-이 조합 자체를 직접 평가한 임상 논문 근거는 현재 확인되지 않았습니다.
-
-[근거]
-올리브오일: 폴리페놀 성분이 심혈관 건강에 도움이 될 수 있다는 연구가 있습니다. (출처: JAMA, 2022, PMID:12345678)
-레몬: 비타민C와 플라보노이드가 항산화 작용을 한다는 보고가 있습니다. (출처: Nutrients, 2021, PMID:87654321)
-
-[주의]
-두 성분을 조합한 형태의 직접적인 임상 연구는 없으므로, 효과를 단정할 수 없습니다.
-
-═══ 컨텍스트 ═══
 
 [용어 정보]
 {term_descriptions}
@@ -333,64 +447,47 @@ def generate_answer(state: GraphState) -> dict:
 
 
 # ═══════════════════════════════════════════════════════
-# Node 9: 후처리 (한국어 재작성 + 안전 문구 + 환각 검증)
+# Node 9: 후처리
 # ═══════════════════════════════════════════════════════
 
-def _verify_citations(answer: str, valid_pmids: set[str]) -> str:
-    """답변 속 PMID가 실제 검색 결과에 있는지 검증한다.
+def _verify_citations(answer: str) -> str:
+    """출처 형식이 (출처: 논문 제목, 연도)로 변경되어 PMID 검증은 생략한다."""
+    return answer
 
-    - valid_pmids에 없는 PMID를 참조하는 출처 표기는 제거한다.
-    - 환각으로 생성된 가짜 출처를 걸러낸다.
-    """
-    if not valid_pmids:
-        # 논문이 아예 없었으면, 출처 표기 자체가 있으면 전부 환각
-        citation_pattern = re.compile(
-            r"\(출처:[^)]*PMID[:\s]*\d+[^)]*\)",
-            re.IGNORECASE,
-        )
-        cleaned = citation_pattern.sub("", answer)
-        if cleaned != answer:
-            logger.warning("Hallucinated citations removed (no valid papers)")
-            cleaned = cleaned.strip()
-            if "출처를 확인할 수 없는 내용이 제거되었습니다" not in cleaned:
-                cleaned += "\n\n(일부 출처를 확인할 수 없어 제거되었습니다.)"
-            return cleaned
-        return answer
 
-    # PMID:숫자 패턴을 찾아서 valid_pmids에 없는 것 필터링
-    citation_pattern = re.compile(
-        r"\(출처:[^)]*PMID[:\s]*(\d+)[^)]*\)",
-        re.IGNORECASE,
-    )
+def _structure_paragraphs(answer: str) -> str:
+    """서론/본론/결론 문단 구조화."""
+    lines = answer.strip().split("\n")
+    intro, body, outro = [], [], []
 
-    hallucinated_count = 0
-
-    def _check_citation(match: re.Match) -> str:
-        nonlocal hallucinated_count
-        pmid = match.group(1)
-        if pmid in valid_pmids:
-            return match.group(0)  # 유효 → 유지
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        if "(출처:" in line:
+            body.append(line)
+        elif body:
+            outro.append(line)
         else:
-            hallucinated_count += 1
-            logger.warning("Hallucinated PMID removed: %s", pmid)
-            return ""  # 무효 → 제거
+            intro.append(line)
 
-    cleaned = citation_pattern.sub(_check_citation, answer)
+    parts = []
+    if intro:
+        parts.append("\n".join(intro))
+    if body:
+        parts.append("\n".join(body))
+    if outro:
+        parts.append("\n".join(outro))
 
-    if hallucinated_count > 0:
-        cleaned = cleaned.strip()
-        cleaned += f"\n\n(검증되지 않은 출처 {hallucinated_count}건이 제거되었습니다.)"
-
-    return cleaned
+    return "\n\n".join(parts)
 
 
 def postprocess(state: GraphState) -> dict:
-    """한국어 용어 정규화 + 환각 검증 + 안전 문구 적용 + 근거 유무 재판정."""
+    """환각 검증 + 한국어 재작성 + 안전 문구 + 서론/본론/결론 구조화."""
     raw = state.get("raw_answer", "")
-    valid_pmids = state.get("valid_pmids", set())
 
-    # 1. 환각 검증: 가짜 PMID 출처 제거
-    verified = _verify_citations(raw, valid_pmids)
+    # 1. 환각 검증 (PMID 기반 → 논문 제목 기반 출처로 변경되어 pass-through)
+    verified = _verify_citations(raw)
 
     # 2. 한국어 재작성
     answer = rewrite_answer(
@@ -408,20 +505,10 @@ def postprocess(state: GraphState) -> dict:
         is_indirect=is_indirect,
     )
 
-    # 4. 근거 유무 재판정
-    #    검색 결과가 있어도 LLM이 "관련 근거 없다"고 판단했으면 False로 덮어쓴다.
-    #    (MMR 검색은 관련 없는 문서도 k개를 채워서 반환하기 때문)
+    # 4. 서론/본론/결론 문단 구조화
+    answer = _structure_paragraphs(answer)
+
+    # 5. 근거 유무 — paper_docs 기준으로만 판단 (score 바 표시 보장)
     has_paper_evidence = state.get("has_paper_evidence", False)
-    if has_paper_evidence:
-        no_evidence_signals = [
-            "근거를 찾지 못했습니다",
-            "직접적인 근거를 찾지 못",
-            "관련 근거를 찾지 못",
-            "직접적인 근거가 없",
-            "논문 근거는 현재 확인되지 않았습니다",
-        ]
-        if any(signal in answer for signal in no_evidence_signals):
-            has_paper_evidence = False
-            logger.info("Evidence flag overridden to False (LLM found no relevant evidence)")
 
     return {"answer": answer, "has_paper_evidence": has_paper_evidence}

@@ -197,10 +197,9 @@ def render_answer_card(result: dict) -> str:
     query_type = result.get("query_type", "general")
     matched = result.get("matched_terms", [])
 
-    # 답변 본문 — HTML 태그 제거 후 파싱
-    clean_answer = re.sub(r"<[^>]+>", "", answer)
+    # 답변 본문 — HTML 태그 완전 제거 후 파싱
+    clean_answer = re.sub(r"<[^>]+>", "", answer)  # HTML 태그 제거
     clean_answer = re.sub(r'(?<!\n)(※)', r'\n\n\1', clean_answer)
-    clean_answer = re.sub(r"(?<!\.)\. *([2-9]|[1-9][0-9]+)\.", r"\n\n\1.", clean_answer)
     lines = clean_answer.split("\n")
     body_parts = []
     for line in lines:
@@ -211,8 +210,6 @@ def render_answer_card(result: dict) -> str:
             body_parts.append(f'<div class="combo-warning">{stripped}</div>')
         elif "※ 검색된 논문의 관련도가 낮아" in stripped:
             pass
-        elif re.match(r"^[0-9]+\.", stripped):
-            body_parts.append(f"<p style='margin:12px 0 4px;font-weight:500'>{stripped}</p>")
         else:
             body_parts.append(f"<p style='margin:4px 0'>{stripped}</p>")
     body_html = "<div style='margin-top:12px'>" + "\n".join(body_parts) + "<div style='margin-bottom:12px'></div></div>" 

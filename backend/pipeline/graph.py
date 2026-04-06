@@ -3,7 +3,9 @@ LangGraph graph — 조건부 분기가 있는 RAG 파이프라인 그래프.
 
 흐름:
   analyze_query → route → retrieve
-    → [신조어?] → resolve_neologism → re_retrieve
+    → [신조어?] → resolve_neologism → re_retrieve ─┐
+                                                    ↓
+                         → assess_retrieval (LLM 검색 품질 평가)
     → [웹필요?] → web_search
     → build_context → generate_answer → postprocess → END
 """
@@ -13,6 +15,7 @@ from langgraph.graph import END, StateGraph
 
 from pipeline.nodes import (
     analyze_query,
+    assess_retrieval,
     build_context,
     generate_answer,
     postprocess,
@@ -31,7 +34,7 @@ def _needs_neologism_resolution(state: GraphState) -> str:
     no_results = not state.get("paper_docs") and not state.get("matched_terms")
     if is_neo or no_results:
         return "resolve_neologism"
-    return "check_web"
+    return "assess_retrieval"
 
 
 def _needs_web_search(state: GraphState) -> str:
@@ -51,7 +54,7 @@ def build_graph() -> StateGraph:
     g.add_node("retrieve", retrieve)
     g.add_node("resolve_neologism", resolve_neologism)
     g.add_node("re_retrieve", re_retrieve)
-    g.add_node("check_web", lambda state: {})  # 패스스루 (분기 전용)
+    g.add_node("assess_retrieval", assess_retrieval)  # LLM 검색 품질 평가
     g.add_node("web_search", web_search)
     g.add_node("build_context", build_context)
     g.add_node("generate_answer", generate_answer)
@@ -68,21 +71,17 @@ def build_graph() -> StateGraph:
         _needs_neologism_resolution,
         {
             "resolve_neologism": "resolve_neologism",
-            "check_web": "check_web",
+            "assess_retrieval": "assess_retrieval",
         },
     )
     g.add_edge("resolve_neologism", "re_retrieve")
 
-    # re_retrieve 후에도 웹검색 체크
-    g.add_conditional_edges(
-        "re_retrieve",
-        _needs_web_search,
-        {"web_search": "web_search", "build_context": "build_context"},
-    )
+    # re_retrieve 후 → LLM 품질 평가
+    g.add_edge("re_retrieve", "assess_retrieval")
 
-    # ── 조건부 분기 2: 웹검색 필요? (신조어 아닌 경우) ──
+    # ── 조건부 분기 2: 웹검색 필요? (LLM이 결정한 needs_web 기준) ──
     g.add_conditional_edges(
-        "check_web",
+        "assess_retrieval",
         _needs_web_search,
         {"web_search": "web_search", "build_context": "build_context"},
     )
