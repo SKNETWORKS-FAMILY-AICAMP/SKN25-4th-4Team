@@ -235,11 +235,11 @@ def render_answer_card(result: dict) -> str:
         )
         term_html = f'<div style="margin-top:8px">{term_pills}</div>'
 
-    # 메타 바
+    # 메타 바 (general은 표시 안 함)
     meta_pills = []
     if category:
         meta_pills.append(f'<span class="meta-pill">📂 {category}</span>')
-    if query_type:
+    if query_type and query_type != "general":
         meta_pills.append(f'<span class="meta-pill">🏷️ {query_type}</span>')
     if result.get("needs_web"):
         meta_pills.append('<span class="meta-pill">🌐 웹검색 사용</span>')
