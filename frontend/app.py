@@ -221,38 +221,10 @@ def render_card(result: dict) -> str:
     # 출처
     sources = _source_pills(result.get("paper_sources", []))
 
-    # 용어 매칭
-    term_html = ""
-    if matched:
-        tp = " ".join(
-            f'<span class="meta-pill">{t.get("alias","")} → '
-            f'{", ".join(t.get("expansions",[])[:3])}</span>'
-            for t in matched if t.get("alias")
-        )
-        if tp:
-            term_html = f'<div style="margin-top:8px">{tp}</div>'
 
-    # 메타 바 — 의미 있는 값만
-    mp = []
-    if category:
-        mp.append(f'<span class="meta-pill">📂 {_CAT.get(category, category)}</span>')
-    if query_type and query_type != "general":
-        mp.append(f'<span class="meta-pill">🏷️ {_QT.get(query_type, query_type)}</span>')
-    if result.get("needs_web"):
-        mp.append('<span class="meta-pill">🌐 웹검색 사용</span>')
-    meta = f'<div class="meta-bar">{"".join(mp)}</div>' if mp else ""
-
-    return (
-        '<div class="res-card">'
-        '<h3>🧬 BioRAG 분석 리포트</h3>'
-        f'{badge}'
-        f'{score_html}'
-        f'{body}'
-        f'{sources}'
-        f'{term_html}'
-        f'{meta}'
-        '</div>'
-    )
+    # 빈 값으로 인한 빈 줄 방지 → compact 이어붙임
+    inner = "".join(filter(None, [badge, score_html, body_html, source_html]))
+    return f'<div class="res-card"><h3>🧬 BioRAG 분석 리포트</h3>{inner}</div>'
 
 
 # ── 질문 처리 ──

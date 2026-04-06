@@ -508,22 +508,25 @@ def postprocess(state: GraphState) -> dict:
     # 4. 서론/본론/결론 문단 구조화
     answer = _structure_paragraphs(answer)
 
-    # 5. 근거 유무 재판정
-    #    검색 결과가 있어도 LLM이 "관련 근거 없다"고 판단했으면 False로 덮어쓴다.
-    #    (MMR 검색은 관련 없는 문서도 k개를 채워서 반환하기 때문)
-    has_paper_evidence = state.get("has_paper_evidence", False)
-    if has_paper_evidence:
-        no_evidence_signals = [
-            "근거를 찾지 못했습니다",
-            "직접적인 근거를 찾지 못",
-            "관련 근거를 찾지 못",
-            "직접적인 근거가 없",
-            "논문 근거는 현재 확인되지 않았습니다",
-            "확인되지 않았습니다",
-            "직접 평가한 임상 논문 근거는 현재 확인",
-        ]
-        if any(signal in answer for signal in no_evidence_signals):
-            has_paper_evidence = False
-            logger.info("Evidence flag → False (LLM이 관련 근거 없다고 판단)")
+    # 5. 근거 없음 신호가 답변에 있으면 paper_docs·score 완전 초기화
+    # (ChromaDB는 항상 top-k를 반환하므로 LLM 답변 내용으로 최종 판단)
+    no_evidence_signals = [
+        "근거를 찾지 못했습니다",
+        "확인되지 않았습니다",
+        "데이터가 없습니다",
+        "논문 근거는 없습니다",
+        "직접적인 근거는 없습니다",
+        "관련 논문이 없습니다",
+        "관련 정보를 찾을 수 없습니다",
+    ]
 
+    if any(sig in answer for sig in no_evidence_signals):
+        return {
+            "answer": answer,
+            "has_paper_evidence": False,
+            "paper_docs": [],
+            "paper_score": 0.0,
+        }
+
+    has_paper_evidence = state.get("has_paper_evidence", False)
     return {"answer": answer, "has_paper_evidence": has_paper_evidence}
