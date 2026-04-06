@@ -483,10 +483,10 @@ def _structure_paragraphs(answer: str) -> str:
 
 
 def postprocess(state: GraphState) -> dict:
-    """환각 검증 + 한국어 재작성 + 안전 문구 + 서론/본론/결론 구조화."""
+    """환각 검증 + 한국어 재작성 + 안전 문구 + 서론/본론/결론 구조화 + 근거 유무 재판정."""
     raw = state.get("raw_answer", "")
 
-    # 1. 환각 검증 (PMID 기반 → 논문 제목 기반 출처로 변경되어 pass-through)
+    # 1. 환각 검증
     verified = _verify_citations(raw)
 
     # 2. 한국어 재작성
@@ -508,7 +508,22 @@ def postprocess(state: GraphState) -> dict:
     # 4. 서론/본론/결론 문단 구조화
     answer = _structure_paragraphs(answer)
 
-    # 5. 근거 유무 — paper_docs 기준으로만 판단 (score 바 표시 보장)
+    # 5. 근거 유무 재판정
+    #    검색 결과가 있어도 LLM이 "관련 근거 없다"고 판단했으면 False로 덮어쓴다.
+    #    (MMR 검색은 관련 없는 문서도 k개를 채워서 반환하기 때문)
     has_paper_evidence = state.get("has_paper_evidence", False)
+    if has_paper_evidence:
+        no_evidence_signals = [
+            "근거를 찾지 못했습니다",
+            "직접적인 근거를 찾지 못",
+            "관련 근거를 찾지 못",
+            "직접적인 근거가 없",
+            "논문 근거는 현재 확인되지 않았습니다",
+            "확인되지 않았습니다",
+            "직접 평가한 임상 논문 근거는 현재 확인",
+        ]
+        if any(signal in answer for signal in no_evidence_signals):
+            has_paper_evidence = False
+            logger.info("Evidence flag → False (LLM이 관련 근거 없다고 판단)")
 
     return {"answer": answer, "has_paper_evidence": has_paper_evidence}
