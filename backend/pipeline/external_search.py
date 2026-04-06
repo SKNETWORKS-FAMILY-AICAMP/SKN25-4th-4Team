@@ -66,28 +66,45 @@ def tavily_search_context(query: str, mode: str = "trend") -> str:
     return "\n\n---\n\n".join(parts)
 
 
-def tavily_resolve_neologism(query: str) -> str:
-    """glossary에 없는 신조어를 Tavily로 조회해 정의를 반환한다."""
+def tavily_resolve_neologism(query: str) -> dict[str, str]:
+    """glossary에 없는 신조어를 Tavily로 조회해 정의 + 검색 키워드를 반환한다."""
     settings = get_settings()
     api_key = settings.tavily_api_key.strip()
     if not api_key:
-        return ""
+        return {"context": "", "search_keywords": ""}
 
     try:
         from langchain_community.tools.tavily_search import TavilySearchResults
     except ImportError:
-        return ""
+        return {"context": "", "search_keywords": ""}
 
     try:
-        tavily = TavilySearchResults(max_results=2)
-        results = tavily.invoke(f"{query} 성분 정의 건강")
-        if isinstance(results, list):
-            contents = " ".join(
-                r.get("content", "") if isinstance(r, dict) else str(r)
-                for r in results[:2]
-            )
-            return contents[:500]
+        tavily = TavilySearchResults(max_results=3)
+        results = tavily.invoke(f"{query} 성분 정의 건강 효과")
+        if not isinstance(results, list) or not results:
+            return {"context": "", "search_keywords": ""}
+
+        contents = " ".join(
+            r.get("content", "") if isinstance(r, dict) else str(r)
+            for r in results[:3]
+        )
+        context = contents[:800]
+
+        from langchain_openai import ChatOpenAI
+
+        llm = ChatOpenAI(
+            model=settings.llm_model,
+            temperature=0,
+            openai_api_key=settings.openai_api_key,
+        )
+        search_keywords = llm.invoke(
+            f"다음 웹 검색 결과를 바탕으로 '{query}'의 핵심 성분/시술을 "
+            f"PubMed에서 검색할 수 있는 영어 키워드 3~5개로만 변환해줘. "
+            f"키워드만 공백으로 구분해서 출력:\n{context[:500]}"
+        ).content.strip()
+
+        return {"context": context, "search_keywords": search_keywords}
+
     except Exception as e:
         logger.warning("Tavily neologism resolve failed: %s", e)
-
-    return ""
+        return {"context": "", "search_keywords": ""}
