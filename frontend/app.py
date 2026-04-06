@@ -287,10 +287,11 @@ with st.sidebar:
         st.rerun()
 
     st.caption("예시 질문")
-    for ex in [
+    examples = [
         "마운자로의 효과",
         "콜라겐이 피부에 도움이 돼?",
-    ]:
+    ]
+    for ex in examples:
         if st.button(f"💬 {ex}", key=f"ex_{ex}", use_container_width=True):
             st.session_state.pending_input = ex
             st.session_state.current_chat_id = ex[:15]
@@ -325,7 +326,7 @@ for m in st.session_state.messages:
         else:
             st.markdown(m["content"], unsafe_allow_html=True)
 
-# 예시 버튼 or 직접 입력
+# 예시 질문 버튼으로 들어온 입력 처리
 pending = st.session_state.pop("pending_input", None)
 user_input = st.chat_input("건강 트렌드에 대해 물어보세요!") or pending
 
@@ -342,6 +343,7 @@ if user_input:
             result = call_backend(user_input)
 
         if result:
+            # answer 필드에서 잔여 HTML 태그를 한 번 더 제거해서 저장
             clean_text = re.sub(r"<[^>]+>", "", result.get("answer", ""))
             result["answer"] = clean_text
 
