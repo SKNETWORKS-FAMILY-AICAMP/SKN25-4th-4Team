@@ -1,0 +1,37 @@
+{
+  "diet_glp1": {
+    "display_name": "다이어트 & GLP-1",
+    "keywords": [
+      "tirzepatide", "semaglutide", "glp-1", "glp1", "mounjaro", "wegovy",
+      "마운자로", "위고비", "오젬픽", "비만", "체중감량", "다이어트",
+      "간헐적 단식", "간헐적단식", "intermittent fasting", "저탄고지", "케토"
+    ]
+  },
+  "skin_beauty_regeneration": {
+    "display_name": "피부/뷰티 & 재생",
+    "keywords": [
+      "collagen", "retinol", "photoaging", "microneedling", "skin", "wound healing",
+      "PDRN", "polynucleotide", "HIFU", "ultherapy",
+      "콜라겐", "레티놀", "피부", "재생", "모공", "탄력", "안티에이징",
+      "리쥬란", "울쎄라", "슈링크"
+    ]
+  },
+  "supplement_trends": {
+    "display_name": "영양제 트렌드",
+    "keywords": [
+      "omega-3", "vitamin d", "probiotics", "magnesium", "supplement",
+      "collagen peptide", "megadose", "gut microbiome",
+      "오메가3", "비타민디", "유산균", "마그네슘", "영양제",
+      "이너뷰티", "콜라겐젤리", "메가도스", "프로바이오틱스"
+    ]
+  },
+  "morning_fasted_routines": {
+    "display_name": "아침 공복 루틴",
+    "keywords": [
+      "olive oil", "lemon", "apple cider vinegar", "coffee", "fasted", "empty stomach",
+      "MCT oil", "bulletproof", "oil pulling",
+      "올레샷", "애사비", "올리브오일", "레몬", "공복", "아침 루틴",
+      "모닝 루틴", "방탄커피", "버터커피", "오일풀링", "소금물"
+    ]
+  }
+}

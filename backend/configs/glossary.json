@@ -1,0 +1,177 @@
+{
+  "마운자로": {
+    "expansions": ["tirzepatide", "GLP-1 receptor agonist", "obesity", "weight loss"],
+    "category_hint": "diet_glp1",
+    "components": ["tirzepatide"],
+    "query_type": "medicine",
+    "description": "티르제파타이드(Tirzepatide) 성분의 당뇨병 및 비만 치료제"
+  },
+  "위고비": {
+    "expansions": ["semaglutide", "GLP-1 receptor agonist", "obesity", "weight loss"],
+    "category_hint": "diet_glp1",
+    "components": ["semaglutide"],
+    "query_type": "medicine",
+    "description": "세마글루타이드(Semaglutide) 성분의 비만 치료제"
+  },
+  "오젬픽": {
+    "expansions": ["semaglutide", "GLP-1 receptor agonist", "blood sugar", "weight loss"],
+    "category_hint": "diet_glp1",
+    "components": ["semaglutide"],
+    "query_type": "medicine",
+    "description": "세마글루타이드(Semaglutide) 성분의 당뇨병 치료제"
+  },
+  "저탄고지": {
+    "expansions": ["ketogenic diet", "low-carbohydrate high-fat diet"],
+    "category_hint": "diet_glp1",
+    "components": ["ketogenic diet"],
+    "query_type": "diet",
+    "description": "저탄수화물 고지방 식이요법 (케토제닉 다이어트)"
+  },
+  "간헐적단식": {
+    "expansions": ["intermittent fasting", "time-restricted eating"],
+    "category_hint": "diet_glp1",
+    "components": ["intermittent fasting"],
+    "query_type": "diet",
+    "description": "일정 시간 공복을 유지한 후 식사하는 방법"
+  },
+  "간헐적 단식": {
+    "expansions": ["intermittent fasting", "time-restricted eating"],
+    "category_hint": "diet_glp1",
+    "components": ["intermittent fasting"],
+    "query_type": "diet",
+    "description": "일정 시간 공복을 유지한 후 식사하는 방법"
+  },
+  "올레샷": {
+    "expansions": ["olive oil", "olive oil polyphenol", "lemon", "citrus flavonoid", "vitamin C"],
+    "category_hint": "morning_fasted_routines",
+    "components": ["olive oil", "lemon"],
+    "query_type": "combo",
+    "description": "올리브오일과 레몬즙을 섞어 공복에 마시는 건강법"
+  },
+  "애사비": {
+    "expansions": ["apple cider vinegar", "acetic acid"],
+    "category_hint": "morning_fasted_routines",
+    "components": ["apple cider vinegar"],
+    "query_type": "combo",
+    "description": "사과식초(apple cider vinegar)를 뜻하는 표현"
+  },
+  "방탄커피": {
+    "expansions": ["bulletproof coffee", "MCT oil", "ketogenic", "butter coffee"],
+    "category_hint": "morning_fasted_routines",
+    "components": ["MCT oil", "butter", "coffee"],
+    "query_type": "combo",
+    "description": "커피에 버터와 MCT 오일을 넣어 마시는 음료"
+  },
+  "버터커피": {
+    "expansions": ["bulletproof coffee", "MCT oil", "ketogenic", "butter coffee"],
+    "category_hint": "morning_fasted_routines",
+    "components": ["MCT oil", "butter", "coffee"],
+    "query_type": "combo",
+    "description": "커피에 버터와 MCT 오일을 넣어 마시는 음료"
+  },
+  "오일풀링": {
+    "expansions": ["oil pulling", "oral health", "coconut oil oral detox"],
+    "category_hint": "morning_fasted_routines",
+    "components": ["coconut oil", "oral health"],
+    "query_type": "combo",
+    "description": "식용 오일로 입을 헹구는 구강 건강 요법"
+  },
+  "공복 커피": {
+    "expansions": ["coffee", "caffeine", "empty stomach", "fasted"],
+    "category_hint": "morning_fasted_routines",
+    "components": ["coffee", "caffeine"],
+    "query_type": "combo",
+    "description": "공복에 커피를 마시는 건강 루틴"
+  },
+  "리쥬란": {
+    "expansions": ["PDRN", "polynucleotide", "skin regeneration", "rejuran"],
+    "category_hint": "skin_beauty_regeneration",
+    "components": ["PDRN", "polynucleotide"],
+    "query_type": "medicine",
+    "description": "PDRN 성분 기반의 피부 재생 시술"
+  },
+  "콜라겐": {
+    "expansions": ["collagen supplementation", "collagen peptide", "skin elasticity"],
+    "category_hint": "skin_beauty_regeneration",
+    "components": ["collagen peptide"],
+    "query_type": "general",
+    "description": "피부 탄력/보충제 질문으로 자주 연결되는 성분"
+  },
+  "레티놀": {
+    "expansions": ["retinol", "tretinoin", "photoaging", "skin aging"],
+    "category_hint": "skin_beauty_regeneration",
+    "components": ["retinol"],
+    "query_type": "medicine",
+    "description": "피부 노화/재생 질문으로 이어지는 대표 성분"
+  },
+  "이너뷰티": {
+    "expansions": ["beauty supplement", "collagen", "antioxidant", "skin oral supplement"],
+    "category_hint": "supplement_trends",
+    "components": ["collagen", "antioxidant"],
+    "query_type": "general",
+    "description": "피부 미용을 위한 먹는 건강보조식품"
+  },
+  "콜라겐젤리": {
+    "expansions": ["collagen peptide", "supplement", "skin elasticity", "oral collagen"],
+    "category_hint": "supplement_trends",
+    "components": ["collagen peptide"],
+    "query_type": "general",
+    "description": "콜라겐 펩타이드가 함유된 젤리 형태의 건강식품"
+  },
+  "메가도스": {
+    "expansions": ["high dose vitamin", "megadose", "toxicity", "safety"],
+    "category_hint": "supplement_trends",
+    "components": ["vitamin"],
+    "query_type": "general",
+    "description": "비타민을 고용량으로 섭취하는 방법"
+  },
+  "오메가3": {
+    "expansions": ["omega-3", "fatty acids, omega-3", "cardiovascular"],
+    "category_hint": "supplement_trends",
+    "components": ["omega-3"],
+    "query_type": "general",
+    "description": "심혈관·중성지방·염증 관련 영양제"
+  },
+  "비타민디": {
+    "expansions": ["vitamin D", "depression", "deficiency"],
+    "category_hint": "supplement_trends",
+    "components": ["vitamin D"],
+    "query_type": "general",
+    "description": "비타민D 결핍·우울감·면역 관련 질문용"
+  },
+  "유산균": {
+    "expansions": ["probiotics", "gut microbiome", "lactobacillus"],
+    "category_hint": "supplement_trends",
+    "components": ["probiotics"],
+    "query_type": "general",
+    "description": "장 건강·마이크로바이옴 관련 영양제"
+  },
+  "울쎄라": {
+    "expansions": ["Ultherapy", "High-Intensity Focused Ultrasound", "HIFU skin tightening"],
+    "category_hint": "skin_beauty_regeneration",
+    "components": ["HIFU"],
+    "query_type": "medicine",
+    "description": "고강도 집속 초음파 리프팅 시술"
+  },
+  "슈링크": {
+    "expansions": ["HIFU", "High-Intensity Focused Ultrasound", "skin lifting"],
+    "category_hint": "skin_beauty_regeneration",
+    "components": ["HIFU"],
+    "query_type": "medicine",
+    "description": "고강도 집속 초음파 리프팅 시술"
+  },
+  "소금물디톡스": {
+    "expansions": ["salt water detox", "cleanse", "electrolyte"],
+    "category_hint": "morning_fasted_routines",
+    "components": ["salt water", "electrolyte"],
+    "query_type": "combo",
+    "description": "소금물을 마시는 디톡스 요법"
+  },
+  "소금물 디톡스": {
+    "expansions": ["salt water detox", "cleanse", "electrolyte"],
+    "category_hint": "morning_fasted_routines",
+    "components": ["salt water", "electrolyte"],
+    "query_type": "combo",
+    "description": "소금물을 마시는 디톡스 요법"
+  }
+}

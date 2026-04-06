@@ -1,0 +1,98 @@
+[
+  {
+    "category": "diet_glp1",
+    "topic_id": "tirzepatide_weight_loss",
+    "query": "(tirzepatide) AND (obesity OR \"weight loss\") AND (systematic[sb] OR meta-analysis[pt] OR randomized controlled trial[pt] OR review[pt])",
+    "max_results": 15
+  },
+  {
+    "category": "diet_glp1",
+    "topic_id": "semaglutide_weight_loss",
+    "query": "(semaglutide) AND (obesity OR \"weight loss\") AND (systematic[sb] OR meta-analysis[pt] OR randomized controlled trial[pt] OR review[pt])",
+    "max_results": 15
+  },
+  {
+    "category": "diet_glp1",
+    "topic_id": "intermittent_fasting",
+    "query": "(\"intermittent fasting\") AND (metabolic OR obesity OR weight) AND (systematic[sb] OR meta-analysis[pt] OR randomized controlled trial[pt] OR review[pt])",
+    "max_results": 12
+  },
+  {
+    "category": "diet_glp1",
+    "topic_id": "autophagy_fasting",
+    "query": "(autophagy) AND (fasting OR caloric restriction) AND (systematic[sb] OR meta-analysis[pt] OR review[pt])",
+    "max_results": 10
+  },
+  {
+    "category": "skin_beauty_regeneration",
+    "topic_id": "collagen_skin_elasticity",
+    "query": "(collagen supplementation) AND (skin elasticity OR photoaging) AND (systematic[sb] OR meta-analysis[pt] OR randomized controlled trial[pt] OR review[pt])",
+    "max_results": 12
+  },
+  {
+    "category": "skin_beauty_regeneration",
+    "topic_id": "retinol_photoaging",
+    "query": "(retinol OR tretinoin) AND (photoaging OR skin aging) AND (systematic[sb] OR meta-analysis[pt] OR randomized controlled trial[pt] OR review[pt])",
+    "max_results": 12
+  },
+  {
+    "category": "skin_beauty_regeneration",
+    "topic_id": "pdrn_skin_regeneration",
+    "query": "(PDRN OR polydeoxyribonucleotide) AND (skin regeneration OR wound healing) AND (systematic[sb] OR meta-analysis[pt] OR randomized controlled trial[pt] OR review[pt])",
+    "max_results": 10
+  },
+  {
+    "category": "skin_beauty_regeneration",
+    "topic_id": "hifu_skin_tightening",
+    "query": "(Ultherapy OR \"High-Intensity Focused Ultrasound\" OR HIFU) AND (skin tightening OR collagen) AND (systematic[sb] OR meta-analysis[pt] OR randomized controlled trial[pt])",
+    "max_results": 10
+  },
+  {
+    "category": "supplement_trends",
+    "topic_id": "omega3_cardiovascular",
+    "query": "((omega-3) OR \"fatty acids, omega-3\"[MeSH Terms]) AND (cardiovascular OR heart) AND (systematic[sb] OR meta-analysis[pt] OR randomized controlled trial[pt] OR review[pt])",
+    "max_results": 15
+  },
+  {
+    "category": "supplement_trends",
+    "topic_id": "vitamin_d_depression",
+    "query": "((vitamin D) AND depression) AND (systematic[sb] OR meta-analysis[pt] OR randomized controlled trial[pt] OR review[pt])",
+    "max_results": 12
+  },
+  {
+    "category": "supplement_trends",
+    "topic_id": "probiotics_gut_health",
+    "query": "(probiotics) AND (gut OR microbiome OR digestive) AND (systematic[sb] OR meta-analysis[pt] OR randomized controlled trial[pt] OR review[pt])",
+    "max_results": 12
+  },
+  {
+    "category": "supplement_trends",
+    "topic_id": "collagen_peptide_supplement",
+    "query": "(collagen peptide supplementation) AND (health OR skin OR joint) AND (systematic[sb] OR meta-analysis[pt] OR review[pt])",
+    "max_results": 10
+  },
+  {
+    "category": "morning_fasted_routines",
+    "topic_id": "olive_oil_metabolic",
+    "query": "((olive oil) OR polyphenol) AND (cardiovascular OR metabolic) AND (systematic[sb] OR meta-analysis[pt] OR randomized controlled trial[pt] OR review[pt])",
+    "max_results": 12
+  },
+  {
+    "category": "morning_fasted_routines",
+    "topic_id": "apple_cider_vinegar",
+    "query": "(\"apple cider vinegar\") AND (glucose OR weight OR metabolic) AND (systematic[sb] OR meta-analysis[pt] OR randomized controlled trial[pt] OR review[pt])",
+    "max_results": 10
+  },
+  {
+    "category": "morning_fasted_routines",
+    "topic_id": "lemon_citrus_flavonoid",
+    "query": "((lemon OR citrus) AND flavonoid) AND (antioxidant OR metabolic OR cardiovascular) AND (systematic[sb] OR meta-analysis[pt] OR randomized controlled trial[pt] OR review[pt])",
+    "max_results": 10
+  },
+  {
+    "category": "morning_fasted_routines",
+    "topic_id": "mct_oil_ketogenic",
+    "query": "(MCT oil OR medium chain triglycerides) AND (ketogenic OR metabolism) AND (systematic[sb] OR meta-analysis[pt] OR review[pt])",
+    "max_results": 10
+  }
+]
