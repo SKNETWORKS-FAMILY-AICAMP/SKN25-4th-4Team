@@ -286,7 +286,7 @@ with st.sidebar:
     health = check_backend_health()
     if health and health.get("status") == "ok":
         cols = health.get("collections", {})
-        st.success(f"서버 연결됨 · 논문 {cols.get('papers', 0)}개 · 보조 {cols.get('aux', 0)}개")
+        st.success(f"서버 연결됨 · 논문 {cols.get('papers', 0)}개 · 보조 논문{cols.get('aux', 0)}개")
     else:
         st.warning("백엔드 서버 연결 대기 중...")
 
