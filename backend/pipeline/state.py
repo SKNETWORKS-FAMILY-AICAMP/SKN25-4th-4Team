@@ -1,6 +1,7 @@
 """
 LangGraph state schema.
 """
+
 from __future__ import annotations
 
 from typing import Any, TypedDict
@@ -9,6 +10,7 @@ from langchain_core.documents import Document
 
 class GraphState(TypedDict, total=False):
     """RAG 파이프라인 전체 공유 상태."""
+
     # 입력
     question: str
     # glossary 매칭 결과

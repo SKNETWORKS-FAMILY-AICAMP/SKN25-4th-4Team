@@ -3,6 +3,7 @@ API request/response schemas.
 
 프론트엔드-백엔드 간 계약(contract)을 명확히 정의한다.
 """
+
 from __future__ import annotations
 
 from pydantic import BaseModel, Field
@@ -36,7 +37,7 @@ class AskResponse(BaseModel):
     paper_sources: list[SourceInfo] = Field(default_factory=list)
     aux_sources: list[SourceInfo] = Field(default_factory=list)
     has_paper_evidence: bool = True
-    weak_evidence: bool = False    
+    weak_evidence: bool = False
     paper_score: float = 0.0
     needs_web: bool = False
     expanded_query: str = ""

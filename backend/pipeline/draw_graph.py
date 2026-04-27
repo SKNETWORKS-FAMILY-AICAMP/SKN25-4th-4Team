@@ -6,6 +6,7 @@
     python -m pipeline.draw_graph           # Mermaid 출력
     python -m pipeline.draw_graph --png     # graph.png 저장
 """
+
 from __future__ import annotations
 
 import argparse

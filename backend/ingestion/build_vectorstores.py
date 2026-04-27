@@ -4,6 +4,7 @@
 papers.jsonl → biorag_papers 컬렉션 (청킹 포함)
 aux_docs.jsonl → biorag_aux 컬렉션
 """
+
 from __future__ import annotations
 
 import json
@@ -56,21 +57,23 @@ def papers_to_documents(rows: list[dict[str, Any]]) -> tuple[list[Document], lis
             f"MeSH Terms: {', '.join(row.get('mesh_terms', []))}"
         )
         for idx, chunk in enumerate(_split_text(text)):
-            docs.append(Document(
-                page_content=chunk,
-                metadata={
-                    "doc_id": row["doc_id"],
-                    "pmid": row.get("pmid", ""),
-                    "title": row.get("title", ""),
-                    "journal": row.get("journal", ""),
-                    "year": str(row.get("year", "")),
-                    "category": row.get("category", ""),
-                    "topic_id": row.get("topic_id", ""),
-                    "source_type": row.get("source_type", "paper"),
-                    "evidence_priority": row.get("evidence_priority", "other"),
-                    "source_url": row.get("source_url", ""),
-                },
-            ))
+            docs.append(
+                Document(
+                    page_content=chunk,
+                    metadata={
+                        "doc_id": row["doc_id"],
+                        "pmid": row.get("pmid", ""),
+                        "title": row.get("title", ""),
+                        "journal": row.get("journal", ""),
+                        "year": str(row.get("year", "")),
+                        "category": row.get("category", ""),
+                        "topic_id": row.get("topic_id", ""),
+                        "source_type": row.get("source_type", "paper"),
+                        "evidence_priority": row.get("evidence_priority", "other"),
+                        "source_url": row.get("source_url", ""),
+                    },
+                )
+            )
             ids.append(f"{row['doc_id']}-{idx}")
     return docs, ids
 
@@ -86,18 +89,23 @@ def aux_to_documents(rows: list[dict[str, Any]]) -> tuple[list[Document], list[s
             extra.append("Expansions: " + ", ".join(row["expansions"]))
         if row.get("mesh_terms"):
             extra.append("MeSH Terms: " + ", ".join(row["mesh_terms"]))
-        text = f"Title: {row['title']}\nSummary: {row.get('content', '')}\n" + "\n".join(extra)
-        docs.append(Document(
-            page_content=text,
-            metadata={
-                "doc_id": row["doc_id"],
-                "title": row.get("title", ""),
-                "category": row.get("category", ""),
-                "source_type": row.get("source_type", "aux"),
-                "source_name": row.get("source_name", ""),
-                "source_url": row.get("source_url", ""),
-            },
-        ))
+        text = (
+            f"Title: {row['title']}\nSummary: {row.get('content', '')}\n"
+            + "\n".join(extra)
+        )
+        docs.append(
+            Document(
+                page_content=text,
+                metadata={
+                    "doc_id": row["doc_id"],
+                    "title": row.get("title", ""),
+                    "category": row.get("category", ""),
+                    "source_type": row.get("source_type", "aux"),
+                    "source_name": row.get("source_name", ""),
+                    "source_url": row.get("source_url", ""),
+                },
+            )
+        )
         ids.append(row["doc_id"])
     return docs, ids
 

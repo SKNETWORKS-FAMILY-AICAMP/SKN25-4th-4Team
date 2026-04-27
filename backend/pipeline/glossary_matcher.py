@@ -5,6 +5,7 @@ Glossary matcher — 신조어/브랜드명 감지 및 쿼리 확장.
 glossary.json을 읽어 한국어 질문에서 신조어를 감지하고,
 영어 확장 키워드 + 카테고리 힌트 + 쿼리 타입을 반환한다.
 """
+
 from __future__ import annotations
 
 from typing import Any

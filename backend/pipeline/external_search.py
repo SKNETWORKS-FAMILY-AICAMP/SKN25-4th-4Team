@@ -4,6 +4,7 @@ External search — Tavily 웹검색 fallback.
 glossary에 없는 최신 트렌드 표현이 들어왔을 때만 사용한다.
 최종 의학 근거로 쓰지 않고 용어 해석/최신성 보조용이다.
 """
+
 from __future__ import annotations
 
 import logging
@@ -85,8 +86,7 @@ def tavily_resolve_neologism(query: str) -> dict[str, str]:
             return {"context": "", "search_keywords": ""}
 
         contents = " ".join(
-            r.get("content", "") if isinstance(r, dict) else str(r)
-            for r in results[:3]
+            r.get("content", "") if isinstance(r, dict) else str(r) for r in results[:3]
         )
         context = contents[:800]
 

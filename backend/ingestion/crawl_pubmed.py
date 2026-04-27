@@ -4,6 +4,7 @@ PubMed 논문 수집기.
 Biopython Entrez API로 논문 초록 + 메타데이터를 수집한다.
 configs/pubmed_topics.json의 토픽 설정을 기반으로 카테고리별 논문을 가져온다.
 """
+
 from __future__ import annotations
 
 import json
@@ -29,8 +30,11 @@ def configure_entrez() -> None:
 
 def search_pmids(query: str, max_results: int) -> list[str]:
     with Entrez.esearch(
-        db="pubmed", term=query, retmax=max_results,
-        sort="relevance", retmode="xml",
+        db="pubmed",
+        term=query,
+        retmax=max_results,
+        sort="relevance",
+        retmode="xml",
     ) as handle:
         result = Entrez.read(handle)
     return result.get("IdList", [])
@@ -40,8 +44,10 @@ def fetch_pubmed_xml(pmids: list[str]) -> str:
     if not pmids:
         return ""
     with Entrez.efetch(
-        db="pubmed", id=",".join(pmids),
-        rettype="abstract", retmode="xml",
+        db="pubmed",
+        id=",".join(pmids),
+        rettype="abstract",
+        retmode="xml",
     ) as handle:
         return handle.read()
 
@@ -75,9 +81,7 @@ def _extract_doi(article: ET.Element) -> str:
 
 def _extract_pub_types(article: ET.Element) -> list[str]:
     return [
-        item.text.strip()
-        for item in article.findall(".//PublicationType")
-        if item.text
+        item.text.strip() for item in article.findall(".//PublicationType") if item.text
     ]
 
 
@@ -104,7 +108,9 @@ def _evidence_priority(pub_types: list[str]) -> str:
 
 
 def parse_pubmed_xml(
-    xml_text: str, topic_id: str, category: str,
+    xml_text: str,
+    topic_id: str,
+    category: str,
 ) -> list[dict[str, Any]]:
     if not xml_text:
         return []
@@ -133,23 +139,25 @@ def parse_pubmed_xml(
         if not (pmid and title and abstract):
             continue
 
-        rows.append({
-            "doc_id": f"pmid-{pmid}",
-            "pmid": pmid,
-            "title": title,
-            "abstract": abstract,
-            "journal": journal,
-            "year": year,
-            "doi": doi,
-            "topic_id": topic_id,
-            "category": category,
-            "source_type": "paper",
-            "publication_types": pub_types,
-            "mesh_terms": mesh,
-            "evidence_priority": _evidence_priority(pub_types),
-            "source_url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
-            "retrieved_at": now,
-        })
+        rows.append(
+            {
+                "doc_id": f"pmid-{pmid}",
+                "pmid": pmid,
+                "title": title,
+                "abstract": abstract,
+                "journal": journal,
+                "year": year,
+                "doi": doi,
+                "topic_id": topic_id,
+                "category": category,
+                "source_type": "paper",
+                "publication_types": pub_types,
+                "mesh_terms": mesh,
+                "evidence_priority": _evidence_priority(pub_types),
+                "source_url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
+                "retrieved_at": now,
+            }
+        )
     return rows
 
 

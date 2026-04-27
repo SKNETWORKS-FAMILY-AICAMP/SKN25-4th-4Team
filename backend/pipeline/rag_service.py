@@ -3,6 +3,7 @@ LangGraph 기반 RAG 서비스.
 graph.py의 컴파일된 그래프를 호출하고,
 GraphState → AskResponse 변환을 담당하는 얇은 래퍼.
 """
+
 from __future__ import annotations
 
 import logging
@@ -51,7 +52,9 @@ class HybridRAGService:
             weak_evidence=result.get("weak_evidence", False),
             paper_score=result.get("paper_score", 0.0),
             needs_web=result.get("needs_web", False),
-            expanded_query=result.get("translated_query", result.get("expanded_query", "")),
+            expanded_query=result.get(
+                "translated_query", result.get("expanded_query", "")
+            ),
         )
 
     async def ask_stream(self, question: str) -> AsyncGenerator[dict, None]:
@@ -111,23 +114,27 @@ class HybridRAGService:
             )
             yield {"type": "chunk", "text": full_answer}
         else:
-            prompt = ChatPromptTemplate.from_messages([
-                ("system", SYSTEM_PROMPT),
-                ("human", "질문: {question}"),
-            ])
+            prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", SYSTEM_PROMPT),
+                    ("human", "질문: {question}"),
+                ]
+            )
             chain = prompt | get_llm() | StrOutputParser()
             full_answer = ""
 
-            async for chunk in chain.astream({
-                "question": state["question"],
-                "paper_context": state.get("paper_context") or "관련 논문 없음",
-                "aux_context": state.get("aux_context") or "보조 문서 없음",
-                "web_context": web_context or "웹 검색 결과 없음",
-                "supplement_mode": "ON" if state.get("is_supplement") else "OFF",
-                "combo_mode": "ON" if state.get("is_combo") else "OFF",
-                "query_type": state.get("query_type", "general"),
-                "term_descriptions": state.get("term_descriptions", "없음"),
-            }):
+            async for chunk in chain.astream(
+                {
+                    "question": state["question"],
+                    "paper_context": state.get("paper_context") or "관련 논문 없음",
+                    "aux_context": state.get("aux_context") or "보조 문서 없음",
+                    "web_context": web_context or "웹 검색 결과 없음",
+                    "supplement_mode": "ON" if state.get("is_supplement") else "OFF",
+                    "combo_mode": "ON" if state.get("is_combo") else "OFF",
+                    "query_type": state.get("query_type", "general"),
+                    "term_descriptions": state.get("term_descriptions", "없음"),
+                }
+            ):
                 full_answer += chunk
                 yield {"type": "chunk", "text": chunk}
 
@@ -150,5 +157,7 @@ class HybridRAGService:
             "weak_evidence": state.get("weak_evidence", False),
             "paper_score": state.get("paper_score", 0.0),
             "needs_web": state.get("needs_web", False),
-            "expanded_query": state.get("translated_query", state.get("expanded_query", "")),
+            "expanded_query": state.get(
+                "translated_query", state.get("expanded_query", "")
+            ),
         }

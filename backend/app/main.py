@@ -4,6 +4,7 @@ FastAPI 백엔드 엔트리포인트.
 POST /api/ask     — RAG 질의응답
 GET  /api/health  — 헬스체크 + 컬렉션 상태
 """
+
 from __future__ import annotations
 
 import json
@@ -58,6 +59,7 @@ app.add_middleware(
 
 
 # ── Endpoints ──
+
 
 @app.post("/api/ask", response_model=AskResponse)
 async def ask(req: AskRequest) -> AskResponse:

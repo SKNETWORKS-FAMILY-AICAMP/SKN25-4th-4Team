@@ -8,6 +8,7 @@ LangGraph nodes — 파이프라인의 각 단계를 독립된 함수로 분리.
 - build_context: weak_evidence 판정
 - postprocess: 서론/본론/결론 후처리 + 환각 검증
 """
+
 from __future__ import annotations
 
 import logging
@@ -57,7 +58,9 @@ def get_llm() -> ChatOpenAI:
     global _llm
     if _llm is None:
         s = get_settings()
-        _llm = ChatOpenAI(model=s.llm_model, temperature=0, openai_api_key=s.openai_api_key)
+        _llm = ChatOpenAI(
+            model=s.llm_model, temperature=0, openai_api_key=s.openai_api_key
+        )
     return _llm
 
 
@@ -68,6 +71,7 @@ def get_collection_counts() -> dict[str, int]:
 # ═══════════════════════════════════════════════════════
 # Node 1: 질문 분석
 # ═══════════════════════════════════════════════════════
+
 
 def analyze_query(state: GraphState) -> dict:
     """glossary 매칭, 쿼리 타입 분류, 확장 키워드 생성."""
@@ -89,6 +93,7 @@ def analyze_query(state: GraphState) -> dict:
 # Node 2: 카테고리 라우팅
 # ═══════════════════════════════════════════════════════
 
+
 def route(state: GraphState) -> dict:
     """질문을 카테고리로 라우팅. needs_web은 assess_retrieval에서 결정."""
     return {
@@ -99,6 +104,7 @@ def route(state: GraphState) -> dict:
 # ═══════════════════════════════════════════════════════
 # Node 3: 1차 검색 (한글→영어 번역 + score 계산 추가)
 # ═══════════════════════════════════════════════════════
+
 
 def _translate_to_english(text: str) -> str:
     """한글 질문을 PubMed 검색용 영어로 번역한다."""
@@ -153,6 +159,7 @@ def retrieve(state: GraphState) -> dict:
 # Node 4: 신조어 해석
 # ═══════════════════════════════════════════════════════
 
+
 def resolve_neologism(state: GraphState) -> dict:
     """신조어를 Tavily로 조회하고 PubMed 검색용 키워드를 추출."""
     resolved = tavily_resolve_neologism(state["question"])
@@ -165,6 +172,7 @@ def resolve_neologism(state: GraphState) -> dict:
 # ═══════════════════════════════════════════════════════
 # Node 5: 재검색
 # ═══════════════════════════════════════════════════════
+
 
 def re_retrieve(state: GraphState) -> dict:
     """신조어 키워드로 논문 재검색 후 기존 결과와 합산."""
@@ -210,7 +218,9 @@ from pydantic import BaseModel, Field as PydanticField
 
 class _RetrievalAssessment(BaseModel):
     needs_web: bool = PydanticField(description="Tavily 웹 검색이 필요한지 여부")
-    weak_evidence: bool = PydanticField(description="논문 근거가 약한지 여부 (질문과 직접 관련 없거나 유사도 낮음)")
+    weak_evidence: bool = PydanticField(
+        description="논문 근거가 약한지 여부 (질문과 직접 관련 없거나 유사도 낮음)"
+    )
     reasoning: str = PydanticField(description="판단 근거 1~2문장")
 
 
@@ -273,20 +283,27 @@ def assess_retrieval(state: GraphState) -> dict:
     paper_summaries = "\n".join(summaries) if summaries else "검색된 논문 없음"
 
     try:
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", _ASSESS_SYSTEM),
-            ("human", "웹 검색 필요 여부를 평가하세요."),
-        ])
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", _ASSESS_SYSTEM),
+                ("human", "웹 검색 필요 여부를 평가하세요."),
+            ]
+        )
         chain = prompt | _get_assess_llm()
-        result: _RetrievalAssessment = chain.invoke({
-            "question": question,
-            "n_docs": len(paper_docs),
-            "paper_summaries": paper_summaries,
-            "paper_score": paper_score,
-        })
+        result: _RetrievalAssessment = chain.invoke(
+            {
+                "question": question,
+                "n_docs": len(paper_docs),
+                "paper_summaries": paper_summaries,
+                "paper_score": paper_score,
+            }
+        )
         logger.info(
             "검색 품질 평가 | needs_web=%s weak_evidence=%s score=%.4f | %s",
-            result.needs_web, result.weak_evidence, paper_score, result.reasoning,
+            result.needs_web,
+            result.weak_evidence,
+            paper_score,
+            result.reasoning,
         )
         return {"needs_web": result.needs_web, "weak_evidence": result.weak_evidence}
     except Exception as e:
@@ -298,6 +315,7 @@ def assess_retrieval(state: GraphState) -> dict:
 # ═══════════════════════════════════════════════════════
 # Node 6: 웹검색 fallback
 # ═══════════════════════════════════════════════════════
+
 
 def web_search(state: GraphState) -> dict:
     """Tavily 웹검색으로 트렌드 컨텍스트를 가져온다."""
@@ -317,6 +335,7 @@ def web_search(state: GraphState) -> dict:
 # Node 7: 컨텍스트 조립 + valid_pmids 수집
 # ═══════════════════════════════════════════════════════
 
+
 def build_context(state: GraphState) -> dict:
     """검색 결과를 포맷하고, 환각 검증용 PMID 목록을 수집한다."""
     paper_docs = state.get("paper_docs", [])
@@ -324,8 +343,7 @@ def build_context(state: GraphState) -> dict:
     matched = state.get("matched_terms", {})
 
     term_lines = [
-        f"- {alias}: {info.get('description', '')}"
-        for alias, info in matched.items()
+        f"- {alias}: {info.get('description', '')}" for alias, info in matched.items()
     ]
 
     web_context = state.get("web_context", "")
@@ -435,22 +453,26 @@ def generate_answer(state: GraphState) -> dict:
             )
         }
 
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", SYSTEM_PROMPT),
-        ("human", "질문: {question}"),
-    ])
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", SYSTEM_PROMPT),
+            ("human", "질문: {question}"),
+        ]
+    )
 
     chain = prompt | get_llm() | StrOutputParser()
-    answer = chain.invoke({
-        "question": state["question"],
-        "paper_context": state.get("paper_context") or "관련 논문 없음",
-        "aux_context": state.get("aux_context") or "보조 문서 없음",
-        "web_context": web_context or "웹 검색 결과 없음",
-        "supplement_mode": "ON" if state.get("is_supplement") else "OFF",
-        "combo_mode": "ON" if state.get("is_combo") else "OFF",
-        "query_type": state.get("query_type", "general"),
-        "term_descriptions": state.get("term_descriptions", "없음"),
-    })
+    answer = chain.invoke(
+        {
+            "question": state["question"],
+            "paper_context": state.get("paper_context") or "관련 논문 없음",
+            "aux_context": state.get("aux_context") or "보조 문서 없음",
+            "web_context": web_context or "웹 검색 결과 없음",
+            "supplement_mode": "ON" if state.get("is_supplement") else "OFF",
+            "combo_mode": "ON" if state.get("is_combo") else "OFF",
+            "query_type": state.get("query_type", "general"),
+            "term_descriptions": state.get("term_descriptions", "없음"),
+        }
+    )
 
     return {"raw_answer": answer}
 
@@ -458,6 +480,7 @@ def generate_answer(state: GraphState) -> dict:
 # ═══════════════════════════════════════════════════════
 # Node 9: 후처리
 # ═══════════════════════════════════════════════════════
+
 
 def _verify_citations(answer: str) -> str:
     """출처 형식이 (출처: 논문 제목, 연도)로 변경되어 PMID 검증은 생략한다."""
@@ -574,11 +597,11 @@ def _structure_paragraphs(answer: str) -> str:
     if safety_lines:
         parts.append("\n".join(safety_lines))  # ⚠️ 경고 단락
     if intro:
-        parts.append("\n".join(intro))          # 서론 문장마다 줄바꿈
+        parts.append("\n".join(intro))  # 서론 문장마다 줄바꿈
     if body:
-        parts.append("\n".join(body))           # 본론 문장마다 줄바꿈
+        parts.append("\n".join(body))  # 본론 문장마다 줄바꿈
     if outro:
-        parts.append(" ".join(outro))           # 결론 한 문단
+        parts.append(" ".join(outro))  # 결론 한 문단
 
     return "\n\n".join(parts)
 

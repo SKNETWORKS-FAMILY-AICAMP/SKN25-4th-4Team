@@ -4,6 +4,7 @@ Retriever — ChromaDB paper/aux 병렬 검색.
 biorag의 paper/aux parallel retrieval + MMR을 분리한 모듈.
 김찬영의 supplement filter 로직도 통합.
 """
+
 from __future__ import annotations
 
 import logging
@@ -21,23 +22,43 @@ logger = logging.getLogger(__name__)
 # ── supplement filter (김찬영 코드 기반) ──
 
 _SUPPLEMENT_BLOCKED = [
-    "injection", "injectable", "intradermal", "ultherapy", "hifu", "laser",
-    "procedure", "surgery", "device", "pn injection",
+    "injection",
+    "injectable",
+    "intradermal",
+    "ultherapy",
+    "hifu",
+    "laser",
+    "procedure",
+    "surgery",
+    "device",
+    "pn injection",
 ]
 _SUPPLEMENT_PREFERRED = [
-    "dietary", "supplement", "oral", "ingestion", "nutrient", "vitamin",
-    "mineral", "omega", "collagen peptide", "probiotic", "food", "nutrition",
+    "dietary",
+    "supplement",
+    "oral",
+    "ingestion",
+    "nutrient",
+    "vitamin",
+    "mineral",
+    "omega",
+    "collagen peptide",
+    "probiotic",
+    "food",
+    "nutrition",
 ]
 
 
 def _filter_supplement_docs(docs: list[Document]) -> list[Document]:
     """영양제 질문에서 주사/시술 맥락 문서를 제외한다."""
     selected = [
-        d for d in docs
+        d
+        for d in docs
         if not any(b in (d.page_content or "").lower() for b in _SUPPLEMENT_BLOCKED)
     ]
     narrowed = [
-        d for d in selected
+        d
+        for d in selected
         if any(p in (d.page_content or "").lower() for p in _SUPPLEMENT_PREFERRED)
     ]
     return narrowed or selected or docs
@@ -105,7 +126,8 @@ class VectorStoreManager:
             paper_kwargs["filter"] = {"category": category}
 
         paper_retriever = self._get_paper_store().as_retriever(
-            search_type="mmr", search_kwargs=paper_kwargs,
+            search_type="mmr",
+            search_kwargs=paper_kwargs,
         )
 
         # aux retriever
@@ -118,7 +140,8 @@ class VectorStoreManager:
             aux_kwargs["filter"] = {"category": category}
 
         aux_retriever = self._get_aux_store().as_retriever(
-            search_type="mmr", search_kwargs=aux_kwargs,
+            search_type="mmr",
+            search_kwargs=aux_kwargs,
         )
 
         # 병렬 검색
@@ -134,10 +157,12 @@ class VectorStoreManager:
             paper_kwargs.pop("filter", None)
             aux_kwargs.pop("filter", None)
             paper_retriever = self._get_paper_store().as_retriever(
-                search_type="mmr", search_kwargs=paper_kwargs,
+                search_type="mmr",
+                search_kwargs=paper_kwargs,
             )
             aux_retriever = self._get_aux_store().as_retriever(
-                search_type="mmr", search_kwargs=aux_kwargs,
+                search_type="mmr",
+                search_kwargs=aux_kwargs,
             )
             parallel = RunnableParallel(
                 paper_docs=RunnableLambda(lambda q: paper_retriever.invoke(q)),
@@ -155,8 +180,10 @@ class VectorStoreManager:
         paper_score = 0.0
         if paper_docs:
             try:
-                scored = self._get_paper_store().similarity_search_with_relevance_scores(
-                    query, k=s.paper_fetch_k
+                scored = (
+                    self._get_paper_store().similarity_search_with_relevance_scores(
+                        query, k=s.paper_fetch_k
+                    )
                 )
                 score_map = {
                     d.metadata.get("doc_id", d.page_content[:40]): sc
@@ -167,7 +194,11 @@ class VectorStoreManager:
                     for doc in paper_docs
                     if doc.metadata.get("doc_id", doc.page_content[:40]) in score_map
                 ]
-                paper_score = max(0.0, min(sum(scores) / len(scores) * 1.7, 1.0)) if scores else 0.0
+                paper_score = (
+                    max(0.0, min(sum(scores) / len(scores) * 1.7, 1.0))
+                    if scores
+                    else 0.0
+                )
                 logger.info("평균 similarity score: %.4f", paper_score)
             except Exception as e:
                 logger.warning("Score 계산 실패: %s", e)
@@ -204,12 +235,14 @@ def docs_to_source_info(docs: list[Document]) -> list[dict[str, str]]:
     items = []
     for doc in docs:
         meta = doc.metadata
-        items.append({
-            "title": meta.get("title", ""),
-            "journal": meta.get("journal", meta.get("source_name", "")),
-            "year": str(meta.get("year", "")),
-            "pmid": meta.get("pmid", ""),
-            "source_type": meta.get("source_type", ""),
-            "url": meta.get("source_url", ""),
-        })
+        items.append(
+            {
+                "title": meta.get("title", ""),
+                "journal": meta.get("journal", meta.get("source_name", "")),
+                "year": str(meta.get("year", "")),
+                "pmid": meta.get("pmid", ""),
+                "source_type": meta.get("source_type", ""),
+                "url": meta.get("source_url", ""),
+            }
+        )
     return items

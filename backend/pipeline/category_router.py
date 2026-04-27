@@ -5,6 +5,7 @@ biorag의 _route_category + 조민서의 get_section 로직을 통합.
 glossary 힌트(가중치 3) + 키워드 매칭(가중치 1)으로 투표하여
 가장 점수가 높은 카테고리를 반환한다.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -37,5 +38,3 @@ def route_category(
         return None
 
     return max(votes, key=votes.get)
-
-

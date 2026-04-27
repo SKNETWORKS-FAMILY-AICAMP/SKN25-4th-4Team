@@ -4,6 +4,7 @@ MedlinePlus + glossary 보조문서 수집기.
 MedlinePlus XML에서 도메인 범위에 해당하는 건강 토픽을 수집하고,
 glossary 항목도 문서화하여 aux_docs.jsonl로 저장한다.
 """
+
 from __future__ import annotations
 
 import json
@@ -60,30 +61,38 @@ def fetch_medlineplus_docs(scope: dict[str, Any]) -> list[dict[str, Any]]:
 
         also_called = [x.text.strip() for x in topic.findall("also-called") if x.text]
         groups = [x.text.strip() for x in topic.findall("group") if x.text]
-        mesh = [x.text.strip() for x in topic.findall(".//mesh-heading/descriptor") if x.text]
+        mesh = [
+            x.text.strip()
+            for x in topic.findall(".//mesh-heading/descriptor")
+            if x.text
+        ]
         summary = " ".join(
             "".join(n.itertext()).strip() for n in topic.findall("full-summary")
         ).strip()
 
-        joined = " ".join([title, summary, " ".join(also_called), " ".join(groups), " ".join(mesh)])
+        joined = " ".join(
+            [title, summary, " ".join(also_called), " ".join(groups), " ".join(mesh)]
+        )
         category = _match_category(joined, scope)
         if not category:
             continue
 
         seen.add(url)
-        rows.append({
-            "doc_id": f"medlineplus-{topic.attrib.get('id', title).strip()}",
-            "title": title,
-            "content": summary,
-            "also_called": also_called,
-            "groups": groups,
-            "mesh_terms": mesh,
-            "category": category,
-            "source_type": "medlineplus",
-            "source_name": "MedlinePlus",
-            "source_url": url,
-            "retrieved_at": now,
-        })
+        rows.append(
+            {
+                "doc_id": f"medlineplus-{topic.attrib.get('id', title).strip()}",
+                "title": title,
+                "content": summary,
+                "also_called": also_called,
+                "groups": groups,
+                "mesh_terms": mesh,
+                "category": category,
+                "source_type": "medlineplus",
+                "source_name": "MedlinePlus",
+                "source_url": url,
+                "retrieved_at": now,
+            }
+        )
     return rows
 
 
@@ -91,17 +100,19 @@ def build_glossary_docs(glossary: dict[str, Any]) -> list[dict[str, Any]]:
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     rows: list[dict[str, Any]] = []
     for alias, info in glossary.items():
-        rows.append({
-            "doc_id": f"glossary-{alias}",
-            "title": alias,
-            "content": info.get("description", ""),
-            "expansions": info.get("expansions", []),
-            "category": info.get("category_hint", ""),
-            "source_type": "glossary",
-            "source_name": "local_glossary",
-            "source_url": "",
-            "retrieved_at": now,
-        })
+        rows.append(
+            {
+                "doc_id": f"glossary-{alias}",
+                "title": alias,
+                "content": info.get("description", ""),
+                "expansions": info.get("expansions", []),
+                "category": info.get("category_hint", ""),
+                "source_type": "glossary",
+                "source_name": "local_glossary",
+                "source_url": "",
+                "retrieved_at": now,
+            }
+        )
     return rows
 
 

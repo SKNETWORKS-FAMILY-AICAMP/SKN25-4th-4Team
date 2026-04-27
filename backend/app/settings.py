@@ -4,6 +4,7 @@ Centralized application settings.
 모든 환경변수와 경로를 한 곳에서 관리한다.
 pydantic-settings를 사용해 .env 파일과 환경변수를 자동으로 로드한다.
 """
+
 from __future__ import annotations
 
 import json
@@ -65,6 +66,7 @@ def get_settings() -> Settings:
 
 
 # ── Config file loaders ──
+
 
 @lru_cache
 def load_glossary() -> dict[str, Any]:

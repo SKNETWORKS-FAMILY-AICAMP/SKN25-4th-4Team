@@ -17,3 +17,11 @@ data/
 *.swp
 .DS_Store
 .env
+
+# Django
+db.sqlite3
+
+# Data
+backend/data/chroma/
+backend/data/raw/
+backend/__pycache__/
