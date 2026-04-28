@@ -279,7 +279,7 @@ function App() {
         <section className="auth-panel" aria-label="BioRAG 로그인">
           <div className="brand-lockup">
             <span className="brand-mark">BioRAG</span>
-            <h1>신뢰할 수 있는 웰니스 인사이트</h1>
+            <h1>웰니스 인사이트</h1>
             <p>PubMed 근거로 건강 궁금증을 쉽게 풀어드립니다.</p>
           </div>
 

@@ -92,7 +92,7 @@ button {
 
 .brand-lockup h1 {
   margin: 20px 0 14px;
-  font-size: clamp(2rem, 5vw, 4.2rem);
+  font-size: clamp(2rem, 4.2vw, 3.7rem);
   line-height: 1.05;
   letter-spacing: 0;
   color: #14231f;
