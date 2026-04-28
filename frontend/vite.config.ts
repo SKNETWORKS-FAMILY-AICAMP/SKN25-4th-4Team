@@ -4,12 +4,14 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    host: '0.0.0.0',
     port: 5173,
     proxy: {
-      '/api': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: true,
-      },
+      '/api/auth':   { target: 'http://django:8001',  changeOrigin: true },
+      '/api/chat':   { target: 'http://django:8001',  changeOrigin: true },
+      '/api/docs':   { target: 'http://django:8001',  changeOrigin: true },
+      '/api/schema': { target: 'http://django:8001',  changeOrigin: true },
+      '/api':        { target: 'http://fastapi:8000', changeOrigin: true },
     },
   },
 })

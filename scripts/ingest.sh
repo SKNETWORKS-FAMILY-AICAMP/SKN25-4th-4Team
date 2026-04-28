@@ -8,7 +8,7 @@ RESET_FLAG=""
 if [[ "${1:-}" == "--reset" ]]; then
     RESET_FLAG="--reset"
 fi
-cd
+
 echo "=== [1/3] PubMed 논문 수집 ==="
 python -m ingestion.crawl_pubmed
 
