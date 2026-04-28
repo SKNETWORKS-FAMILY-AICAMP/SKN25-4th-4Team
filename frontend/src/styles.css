@@ -474,7 +474,18 @@ textarea:focus {
   margin: 0;
   line-height: 1.7;
   color: #1d2c27;
-  white-space: pre-wrap;
+}
+
+.report-paragraph {
+  display: block;
+}
+
+.report-paragraph + .report-paragraph {
+  margin-top: 16px;
+}
+
+.report-line {
+  display: block;
 }
 
 .evidence-meta {
@@ -558,15 +569,32 @@ textarea:focus {
   color: #1565c0;
   font-size: 0.85rem;
   font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  border-radius: 999px;
+  border: 1px solid #c6dfef;
+  border-radius: 8px;
+  text-decoration: none;
   transition: background 0.15s ease;
 }
 
 .source-pill:hover {
   background: #d8e9f7;
   color: #0d47a1;
+}
+
+.inline-source {
+  margin-left: 6px;
+  padding: 4px 10px;
+  vertical-align: baseline;
+  white-space: nowrap;
+}
+
+.web-search-badge {
+  align-self: flex-start;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #edf4f2;
+  color: #31564d;
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .composer {

@@ -31,6 +31,7 @@ export type Message = {
   has_paper_evidence?: boolean
   weak_evidence?: boolean
   paper_score?: number
+  needs_web?: boolean
   paper_sources?: SourceInfo[]
   created_at?: string
 }
@@ -40,6 +41,7 @@ export type AskResponse = {
   has_paper_evidence?: boolean
   weak_evidence?: boolean
   paper_score?: number
+  needs_web?: boolean
   paper_sources?: SourceInfo[]
 }
 

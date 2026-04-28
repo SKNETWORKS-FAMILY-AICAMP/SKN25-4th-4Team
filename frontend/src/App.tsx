@@ -170,6 +170,7 @@ function App() {
         has_paper_evidence: result.has_paper_evidence,
         weak_evidence: result.weak_evidence,
         paper_score: result.paper_score,
+        needs_web: result.needs_web,
         paper_sources: result.paper_sources,
       }
       setMessages((current) => [...current.slice(0, -1), assistantMessage])
@@ -315,7 +316,7 @@ function App() {
         <header className="conversation-header">
           <div>
             <h1>BioRAG</h1>
-            <p>의학적 판단은 전문가 상담을 대신하지 않습니다.</p>
+            <p>논문 기반의 건강 지식 서비스로, 의학적 진단은 전문가 상담을 요합니다.</p>
           </div>
         </header>
 
@@ -343,8 +344,8 @@ function App() {
                       {message.has_paper_evidence !== undefined && (
                         <EvidenceMeta message={message} />
                       )}
-                      <p className="report-body">{message.content}</p>
-                      {message.paper_sources && message.paper_sources.length > 0 && (
+                      <ReportBody message={message} />
+                      {message.paper_sources && message.paper_sources.length > 0 && !hasCitationBlocks(message.content) && (
                         <SourceLinks sources={message.paper_sources} />
                       )}
                     </div>
@@ -411,23 +412,160 @@ function EvidenceMeta({ message }: { message: Message }) {
           <span className="evidence-score-value">{score}%</span>
         </div>
       )}
+
+      {message.needs_web && <span className="web-search-badge">웹검색 보조 사용</span>}
     </div>
   )
+}
+
+function ReportBody({ message }: { message: Message }) {
+  const sources = message.paper_sources ?? []
+  const usedSourceIndexes = new Set<number>()
+  let citationIndex = 0
+
+  return (
+    <div className="report-body">
+      {message.content.split(/\n{2,}/).map((paragraph, paragraphIndex) => (
+        <div className="report-paragraph" key={`paragraph-${paragraphIndex}`}>
+          {paragraph.split('\n').map((line, lineIndex) => {
+            const parts = splitCitationBlocks(line)
+            return (
+              <span className="report-line" key={`line-${lineIndex}`}>
+                {parts.map((part, partIndex) => {
+                  if (typeof part === 'string') return <span key={`text-${partIndex}`}>{part}</span>
+                  const source = findCitationSource(part.citation, sources, usedSourceIndexes) ?? sources[citationIndex]
+                  citationIndex += 1
+                  if (!source) return null
+                  return <SourcePill key={`cite-${partIndex}`} source={source} inline />
+                })}
+              </span>
+            )
+          })}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function findCitationSource(
+  citation: string,
+  sources: NonNullable<Message['paper_sources']>,
+  usedSourceIndexes: Set<number>,
+) {
+  const normalizedCitation = normalizeCitation(citation)
+  if (!normalizedCitation) return undefined
+
+  const unusedIndex = sources.findIndex((source, index) => {
+    if (usedSourceIndexes.has(index)) return false
+    const normalizedTitle = normalizeCitation(source.title || '')
+    if (!normalizedTitle) return false
+    return normalizedTitle.includes(normalizedCitation) || normalizedCitation.includes(normalizedTitle)
+  })
+
+  const index = unusedIndex >= 0
+    ? unusedIndex
+    : sources.findIndex((source) => {
+      const normalizedTitle = normalizeCitation(source.title || '')
+      return Boolean(normalizedTitle) && normalizedTitle.includes(normalizedCitation)
+    })
+
+  if (index >= 0) {
+    usedSourceIndexes.add(index)
+    return sources[index]
+  }
+
+  return undefined
+}
+
+function normalizeCitation(value: string) {
+  return value
+    .replace(/^[([ ]?출처:\s*/, '')
+    .replace(/[)\]]$/, '')
+    .replace(/,\s*\d{4}\s*$/, '')
+    .replace(/[^\p{Letter}\p{Number}]+/gu, ' ')
+    .trim()
+    .toLowerCase()
+}
+
+function hasCitationBlocks(content: string) {
+  return content.includes('(출처:') || content.includes('[출처:')
+}
+
+function splitCitationBlocks(line: string): Array<string | { citation: string }> {
+  const parts: Array<string | { citation: string }> = []
+  let cursor = 0
+
+  while (cursor < line.length) {
+    const parenStart = line.indexOf('(출처:', cursor)
+    const bracketStart = line.indexOf('[출처:', cursor)
+    const starts = [parenStart, bracketStart].filter((index) => index >= 0)
+    if (starts.length === 0) {
+      parts.push(line.slice(cursor))
+      break
+    }
+
+    const start = Math.min(...starts)
+    const opener = line[start]
+    const closer = opener === '(' ? ')' : ']'
+    if (start > cursor) parts.push(line.slice(cursor, start))
+
+    let end = start
+    let depth = 0
+    while (end < line.length) {
+      const char = line[end]
+      if (char === opener) depth += 1
+      if (char === closer) {
+        depth -= 1
+        if (depth === 0) break
+      }
+      end += 1
+    }
+
+    if (end >= line.length) {
+      parts.push(line.slice(start))
+      break
+    }
+
+    parts.push({ citation: line.slice(start, end + 1) })
+    cursor = end + 1
+  }
+
+  return parts.filter((part) => typeof part !== 'string' || part.length > 0)
+}
+
+function SourcePill({
+  source,
+  fallback,
+  inline = false,
+}: {
+  source?: NonNullable<Message['paper_sources']>[number]
+  fallback?: string
+  inline?: boolean
+}) {
+  const text = source ? formatSourceLabel(source) : fallback || '출처'
+  const href = source?.url || (source?.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${source.pmid}/` : '')
+  const title = source?.title ? `${source.title}${source.year ? `, ${source.year}` : ''}` : text
+  const className = inline ? 'source-pill inline-source' : 'source-pill'
+
+  return href ? (
+    <a href={href} target="_blank" rel="noreferrer" className={className} title={title}>
+      {text}
+    </a>
+  ) : (
+    <span className={className} title={title}>{text}</span>
+  )
+}
+
+function formatSourceLabel(source: NonNullable<Message['paper_sources']>[number]) {
+  return [source.journal || source.source_type || '논문', source.year].filter(Boolean).join(' ')
 }
 
 function SourceLinks({ sources }: { sources: NonNullable<Message['paper_sources']> }) {
   return (
     <div className="source-links">
       {sources.slice(0, 5).map((source, index) => {
-        const text = [source.journal || source.source_type || '출처', source.year].filter(Boolean).join(' ')
-        const href = source.url || (source.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${source.pmid}/` : '')
-        return href ? (
-          <a key={`${href}-${index}`} href={href} target="_blank" rel="noreferrer" className="source-pill">
-            {text}
-          </a>
-        ) : (
-          <span key={`${text}-${index}`} className="source-pill">{text}</span>
-        )
+        const key = source.url || source.pmid || source.title || `${source.journal}-${index}`
+        return <SourcePill key={`${key}-${index}`} source={source} />
       })}
     </div>
   )
