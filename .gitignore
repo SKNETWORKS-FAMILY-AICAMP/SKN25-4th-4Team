@@ -3,6 +3,8 @@ __pycache__/
 .env
 .venv/
 venv/
+node_modules/
+*.tsbuildinfo
 *.egg-info/
 dist/
 build/
