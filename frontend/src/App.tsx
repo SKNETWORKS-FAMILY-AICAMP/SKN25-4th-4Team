@@ -279,8 +279,8 @@ function App() {
         <section className="auth-panel" aria-label="BioRAG 로그인">
           <div className="brand-lockup">
             <span className="brand-mark">BioRAG</span>
-            <h1>논문 기반 건강 팩트체커</h1>
-            <p>질문을 보내면 PubMed와 보조 문서를 바탕으로 근거 수준을 정리합니다.</p>
+            <h1>신뢰할 수 있는 웰니스 인사이트</h1>
+            <p>PubMed 근거로 건강 궁금증을 쉽게 풀어드립니다.</p>
           </div>
 
           <form className="auth-form" onSubmit={handleAuthSubmit}>
