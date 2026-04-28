@@ -452,25 +452,121 @@ textarea:focus {
   border: 1px solid #dfe8e4;
 }
 
-.evidence-meta {
+.report {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid #e8efec;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.evidence-meta span,
-.evidence-meta a {
-  color: #245a74;
-  background: #edf6fa;
-  border: 1px solid #c9dfe8;
-  border-radius: 8px;
-  padding: 4px 8px;
-  font-size: 0.82rem;
-  font-weight: 800;
-  text-decoration: none;
+.report-header {
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e8efec;
+}
+
+.report-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f6b39;
+}
+
+.report-body {
+  margin: 0;
+  line-height: 1.7;
+  color: #1d2c27;
+  white-space: pre-wrap;
+}
+
+.evidence-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.evidence-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.evidence-badge.badge-strong {
+  background: #e3f6e8;
+  color: #1f6b39;
+}
+
+.evidence-badge.badge-weak {
+  background: #fdf3c8;
+  color: #8a6a00;
+}
+
+.evidence-badge.badge-none {
+  background: #fbe3e3;
+  color: #9a2a2a;
+}
+
+.evidence-score {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+}
+
+.evidence-score-label {
+  color: #4a5a55;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.evidence-score-bar {
+  flex: 1;
+  height: 8px;
+  background: #eaf0ed;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.evidence-score-fill {
+  height: 100%;
+  background: #2bb360;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.evidence-score-value {
+  color: #4a5a55;
+  font-weight: 700;
+  min-width: 38px;
+  text-align: right;
+}
+
+.source-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.source-pill {
+  display: inline-block;
+  padding: 8px 18px;
+  background: #eaf3fb;
+  color: #1565c0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  border-radius: 999px;
+  transition: background 0.15s ease;
+}
+
+.source-pill:hover {
+  background: #d8e9f7;
+  color: #0d47a1;
 }
 
 .composer {

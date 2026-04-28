@@ -335,9 +335,21 @@ function App() {
             {messages.map((message, index) => (
               <article key={`${message.role}-${index}`} className={`message ${message.role}`}>
                 <div className="message-bubble">
-                  <p>{message.content}</p>
-                  {message.role === 'assistant' && message.has_paper_evidence !== undefined && (
-                    <EvidenceMeta message={message} />
+                  {message.role === 'assistant' ? (
+                    <div className="report">
+                      <header className="report-header">
+                        <h3>BioRAG 분석 리포트</h3>
+                      </header>
+                      {message.has_paper_evidence !== undefined && (
+                        <EvidenceMeta message={message} />
+                      )}
+                      <p className="report-body">{message.content}</p>
+                      {message.paper_sources && message.paper_sources.length > 0 && (
+                        <SourceLinks sources={message.paper_sources} />
+                      )}
+                    </div>
+                  ) : (
+                    <p>{message.content}</p>
                   )}
                 </div>
               </article>
@@ -371,25 +383,50 @@ function App() {
 
 function EvidenceMeta({ message }: { message: Message }) {
   const score = Math.round((message.paper_score ?? 0) * 100)
-  const label = message.has_paper_evidence
-    ? message.weak_evidence
-      ? '간접 근거'
-      : '논문 근거 있음'
-    : '직접 근거 없음'
+  const isWeak = message.has_paper_evidence && message.weak_evidence
+  const isStrong = message.has_paper_evidence && !message.weak_evidence
+  const label = isStrong ? '논문 근거 있음' : isWeak ? '간접 근거' : '직접 근거 없음'
+  const badgeIcon = isStrong ? '◎' : isWeak ? '△' : '✕'
+  const badgeClass = isStrong ? 'badge-strong' : isWeak ? 'badge-weak' : 'badge-none'
 
   return (
     <div className="evidence-meta">
-      <span>{label}</span>
-      {message.paper_score !== undefined && <span>관련도 {score}%</span>}
-      {message.paper_sources?.slice(0, 3).map((source, index) => {
+      <div className={`evidence-badge ${badgeClass}`}>
+        <span aria-hidden="true">{badgeIcon}</span>
+        {label}
+      </div>
+
+      {message.paper_score !== undefined && (
+        <div className="evidence-score">
+          <span className="evidence-score-label">논문 관련도</span>
+          <div
+            className="evidence-score-bar"
+            role="progressbar"
+            aria-valuenow={score}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <div className="evidence-score-fill" style={{ width: `${score}%` }} />
+          </div>
+          <span className="evidence-score-value">{score}%</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SourceLinks({ sources }: { sources: NonNullable<Message['paper_sources']> }) {
+  return (
+    <div className="source-links">
+      {sources.slice(0, 5).map((source, index) => {
         const text = [source.journal || source.source_type || '출처', source.year].filter(Boolean).join(' ')
         const href = source.url || (source.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${source.pmid}/` : '')
         return href ? (
-          <a key={`${href}-${index}`} href={href} target="_blank" rel="noreferrer">
+          <a key={`${href}-${index}`} href={href} target="_blank" rel="noreferrer" className="source-pill">
             {text}
           </a>
         ) : (
-          <span key={`${text}-${index}`}>{text}</span>
+          <span key={`${text}-${index}`} className="source-pill">{text}</span>
         )
       })}
     </div>
