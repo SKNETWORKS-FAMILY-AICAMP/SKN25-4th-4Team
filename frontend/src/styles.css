@@ -544,7 +544,6 @@ textarea:focus {
 
 .evidence-score-fill {
   height: 100%;
-  background: #2bb360;
   border-radius: 999px;
   transition: width 0.3s ease;
 }

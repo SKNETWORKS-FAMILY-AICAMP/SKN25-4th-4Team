@@ -407,7 +407,13 @@ function EvidenceMeta({ message }: { message: Message }) {
             aria-valuemin={0}
             aria-valuemax={100}
           >
-            <div className="evidence-score-fill" style={{ width: `${score}%` }} />
+            <div
+              className="evidence-score-fill"
+              style={{
+                width: `${score}%`,
+                background: isStrong ? '#2bb360' : isWeak ? '#d4a000' : '#c0392b',
+              }}
+            />
           </div>
           <span className="evidence-score-value">{score}%</span>
         </div>

@@ -305,10 +305,12 @@ def assess_retrieval(state: GraphState) -> dict:
             paper_score,
             result.reasoning,
         )
-        return {"needs_web": result.needs_web, "weak_evidence": result.weak_evidence}
+        # 조합 질문(is_combo)은 개별 성분 논문만 존재 → 항상 간접 근거
+        weak_evidence = result.weak_evidence or bool(state.get("is_combo"))
+        return {"needs_web": result.needs_web, "weak_evidence": weak_evidence}
     except Exception as e:
         logger.warning("검색 품질 평가 실패, score 기반 fallback: %s", e)
-        weak = bool(paper_docs) and paper_score < 0.5
+        weak = bool(paper_docs) and (paper_score < 0.5 or bool(state.get("is_combo")))
         return {"needs_web": weak or not paper_docs, "weak_evidence": weak}
 
 
@@ -634,6 +636,7 @@ def postprocess(state: GraphState) -> dict:
 
     # 5. 근거 없음 신호가 답변에 있으면 paper_docs·score 완전 초기화
     # (ChromaDB는 항상 top-k를 반환하므로 LLM 답변 내용으로 최종 판단)
+    # weak_evidence(간접 근거)인 경우에는 신호 무시 → 간접 근거 상태 유지
     no_evidence_signals = [
         "근거를 찾지 못했습니다",
         "확인되지 않았습니다",
@@ -644,7 +647,11 @@ def postprocess(state: GraphState) -> dict:
         "관련 정보를 찾을 수 없습니다",
     ]
 
-    if any(sig in answer for sig in no_evidence_signals):
+    # ⚠️ 안전 문구는 제외하고 본문만 검사 (안전 문구에 포함된 신호로 오발동 방지)
+    answer_body = "\n".join(
+        line for line in answer.split("\n") if not line.strip().startswith("⚠️")
+    )
+    if not state.get("weak_evidence") and any(sig in answer_body for sig in no_evidence_signals):
         return {
             "answer": answer,
             "has_paper_evidence": False,
@@ -652,10 +659,10 @@ def postprocess(state: GraphState) -> dict:
             "paper_score": 0.0,
         }
 
-    # 간접 근거인데 유사도 점수가 매우 낮으면 → 근거 없음으로 처리
-    # (ChromaDB가 억지로 반환한 무관한 논문을 걸러냄)
+    # 유사도 점수가 극히 낮으면 → weak_evidence 여부 무관하게 근거 없음
+    # (ChromaDB가 억지로 반환한 완전 무관한 논문을 걸러냄)
     paper_score = state.get("paper_score", 0.0)
-    if state.get("weak_evidence") and paper_score < 0.25:
+    if paper_score < 0.1:
         return {
             "answer": answer,
             "has_paper_evidence": False,
