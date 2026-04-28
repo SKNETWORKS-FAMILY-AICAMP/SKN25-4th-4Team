@@ -343,31 +343,38 @@ textarea:focus {
   justify-self: center;
   display: grid;
   gap: 24px;
+  text-align: center;
 }
 
 .empty-state h2 {
   margin: 0;
   color: #1a2a25;
-  font-size: clamp(1.8rem, 4vw, 3.4rem);
-  line-height: 1.08;
+  font-size: 2.2rem;
+  line-height: 1.3;
   letter-spacing: 0;
+  white-space: nowrap;
 }
 
 .example-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: nowrap;
   gap: 10px;
+  justify-content: center;
 }
 
 .example-grid button {
-  min-height: 72px;
-  padding: 14px;
+  flex: 1;
+  min-height: 48px;
+  padding: 12px 16px;
   color: #244039;
   text-align: left;
   font-weight: 800;
   background: #ffffff;
   border: 1px solid #dce7e2;
   border-radius: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .message-list {

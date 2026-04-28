@@ -11,6 +11,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = ('email', 'password', 'nickname')
 
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError('이미 사용 중인 이메일입니다.')
+        return value
+
     def create(self, validated_data):
         return User.objects.create_user(
             username=validated_data['email'],

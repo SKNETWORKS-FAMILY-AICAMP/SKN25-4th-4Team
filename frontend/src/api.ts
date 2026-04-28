@@ -39,7 +39,13 @@ async function request<T>(path: string, options: RequestInit = {}, withAuth = tr
 
   if (!response.ok) {
     const detail = data?.detail ?? data?.error ?? data?.message
-    throw new Error(typeof detail === 'string' ? detail : '요청 처리에 실패했습니다.')
+    if (typeof detail === 'string') throw new Error(detail)
+    if (data && typeof data === 'object') {
+      const firstKey = Object.keys(data)[0]
+      const firstVal = data[firstKey]
+      if (Array.isArray(firstVal) && firstVal.length > 0) throw new Error(String(firstVal[0]))
+    }
+    throw new Error('요청 처리에 실패했습니다.')
   }
 
   return data as T

@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ask,
   createSession,
@@ -84,7 +84,9 @@ function App() {
   const [question, setQuestion] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [notice, setNotice] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [isPreview, setIsPreview] = useState(false)
+  const skipNextFetch = useRef(false)
   const [authForm, setAuthForm] = useState({
     email: '',
     password: '',
@@ -113,7 +115,10 @@ function App() {
       setMessages([])
       return
     }
-
+    if (skipNextFetch.current) {
+      skipNextFetch.current = false
+      return
+    }
     getMessages(activeSession.id)
       .then(setMessages)
       .catch((error) => setNotice(error.message))
@@ -148,10 +153,15 @@ function App() {
   async function handleAuthSubmit(event: FormEvent) {
     event.preventDefault()
     setNotice('')
+    setIsSubmitting(true)
 
     try {
       if (authMode === 'register') {
         await register(authForm.email, authForm.password, authForm.nickname)
+        setAuthMode('login')
+        setAuthForm({ email: authForm.email, password: '', nickname: '' })
+        setNotice('회원가입이 완료됐습니다. 로그인해주세요.')
+        return
       }
       await login(authForm.email, authForm.password)
       const me = await getMe()
@@ -159,6 +169,8 @@ function App() {
       await refreshSessions()
     } catch (error) {
       setNotice(error instanceof Error ? error.message : '인증 요청에 실패했습니다.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -194,7 +206,6 @@ function App() {
     const session = await createSession(title)
     setSessions((current) => [session, ...current])
     setActiveSession(session)
-    setMessages([])
     return session
   }
 
@@ -241,6 +252,7 @@ function App() {
         return
       }
 
+      if (!activeSession) skipNextFetch.current = true
       const session = activeSession ?? (await handleNewSession(content))
       const result = await ask(content, session?.id)
       const assistantMessage: Message = {
@@ -327,8 +339,10 @@ function App() {
 
             {notice && <p className="notice">{notice}</p>}
 
-            <button className="primary-button" type="submit">
-              {authMode === 'login' ? '로그인' : '가입하고 시작'}
+            <button className="primary-button" type="submit" disabled={isSubmitting}>
+              {isSubmitting
+                ? authMode === 'login' ? '로그인 중...' : '회원가입 중...'
+                : authMode === 'login' ? '로그인' : '가입하고 시작'}
             </button>
 
             {/* Preview-only button: remove after backend auth is usable. */}
@@ -350,7 +364,7 @@ function App() {
       <aside className="sidebar" aria-label="채팅 세션">
         <div className="sidebar-header">
           <span className="brand-mark">BioRAG</span>
-          <button className="ghost-button" type="button" onClick={() => void handleNewSession()}>
+          <button className="ghost-button" type="button" onClick={() => { setActiveSession(null); setMessages([]); setNotice('') }}>
             새 채팅
           </button>
         </div>
@@ -399,7 +413,7 @@ function App() {
       <section className="conversation" aria-label="BioRAG 채팅">
         <header className="conversation-header">
           <div>
-            <h1>{activeSession?.title ?? '새 건강 상담'}</h1>
+            <h1>BioRAG</h1>
             <p>의학적 판단은 전문가 상담을 대신하지 않습니다.</p>
           </div>
         </header>
@@ -436,6 +450,12 @@ function App() {
           <textarea
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault()
+                void handleAsk()
+              }
+            }}
             placeholder="건강 정보나 영양제, 치료제에 대해 질문해보세요."
             rows={1}
           />
