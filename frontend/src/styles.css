@@ -29,13 +29,37 @@ button {
 }
 
 .auth-screen {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   min-height: 100vh;
   display: grid;
   place-items: center;
   padding: 32px 16px;
   background:
-    linear-gradient(140deg, rgba(224, 241, 235, 0.95), rgba(236, 243, 249, 0.9)),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cg fill='none' stroke='%2394b8ad' stroke-opacity='.28'%3E%3Cpath d='M30 80c25-40 95-40 120 0M30 100c25 40 95 40 120 0'/%3E%3Cpath d='M55 52v76M88 38v104M125 52v76'/%3E%3C/g%3E%3C/svg%3E");
+    linear-gradient(140deg, rgba(224, 241, 235, 0.92), rgba(236, 243, 249, 0.88)),
+    #eef4f1;
+}
+
+.auth-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: url("/auth-nature-medical-bg.png") center / cover no-repeat;
+  opacity: 0.68;
+  filter: saturate(1.05) contrast(1);
+}
+
+.auth-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 22% 18%, rgba(255, 255, 255, 0.46), transparent 30%),
+    radial-gradient(circle at 70% 58%, rgba(255, 255, 255, 0.38), transparent 34%),
+    linear-gradient(140deg, rgba(229, 245, 239, 0.36), rgba(244, 249, 252, 0.44));
 }
 
 .auth-panel {

@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ask,
   createSession,
@@ -273,14 +273,23 @@ function App() {
     }
   }
 
+  function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) {
+      return
+    }
+
+    event.preventDefault()
+    void handleAsk()
+  }
+
   if (!isAuthed) {
     return (
       <main className="auth-screen">
         <section className="auth-panel" aria-label="BioRAG 로그인">
           <div className="brand-lockup">
             <span className="brand-mark">BioRAG</span>
-            <h1>논문 기반 건강 팩트체커</h1>
-            <p>질문을 보내면 PubMed와 보조 문서를 바탕으로 근거 수준을 정리합니다.</p>
+            <h1>신뢰할 수 있는 웰니스 인사이트</h1>
+            <p>PubMed 근거로 건강 궁금증을 쉽게 풀어드립니다.</p>
           </div>
 
           <form className="auth-form" onSubmit={handleAuthSubmit}>
@@ -450,12 +459,7 @@ function App() {
           <textarea
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault()
-                void handleAsk()
-              }
-            }}
+            onKeyDown={handleComposerKeyDown}
             placeholder="건강 정보나 영양제, 치료제에 대해 질문해보세요."
             rows={1}
           />
