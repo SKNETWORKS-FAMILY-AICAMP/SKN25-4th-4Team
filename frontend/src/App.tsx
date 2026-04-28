@@ -22,58 +22,6 @@ const examples = [
   '오메가3는 매일 먹어도 괜찮아?',
 ]
 
-// ===== Preview-only block: remove this whole block when backend auth/RAG is ready. =====
-const previewUser: User = {
-  id: 0,
-  email: 'preview@biorag.local',
-  nickname: '프론트 미리보기',
-}
-
-const previewSession: ChatSession = {
-  id: 0,
-  title: '화면 미리보기',
-  created_at: new Date().toISOString(),
-}
-
-const previewMessages: Message[] = [
-  {
-    role: 'user',
-    content: '콜라겐이 피부 건강에 도움이 돼?',
-  },
-  {
-    role: 'assistant',
-    content:
-      '일부 연구에서는 콜라겐 섭취가 피부 보습과 탄력 지표 개선에 도움을 줄 수 있다고 보고합니다. 다만 제품 성분, 섭취 기간, 개인 건강 상태에 따라 차이가 있으므로 치료 목적보다는 보조적인 건강 정보로 보는 것이 좋습니다.',
-    has_paper_evidence: true,
-    weak_evidence: false,
-    paper_score: 0.82,
-    paper_sources: [
-      {
-        journal: 'Nutrients',
-        year: '2024',
-        url: 'https://pubmed.ncbi.nlm.nih.gov/',
-      },
-    ],
-  },
-]
-
-function createPreviewSession(title = '새 채팅 미리보기'): ChatSession {
-  return {
-    ...previewSession,
-    title,
-    created_at: new Date().toISOString(),
-  }
-}
-
-function createPreviewAnswer(): Message {
-  return {
-    ...previewMessages[1],
-    content:
-      '미리보기 모드에서는 실제 RAG API를 호출하지 않습니다. 백엔드가 준비되면 같은 화면에서 질문을 보내고 논문 근거, 관련도, 출처를 실제 응답으로 확인할 수 있습니다.',
-  }
-}
-// ===== End preview-only block. =====
-
 function App() {
   const [authMode, setAuthMode] = useState<AuthMode>('login')
   const [user, setUser] = useState<User | null>(null)
@@ -85,7 +33,6 @@ function App() {
   const [isSending, setIsSending] = useState(false)
   const [notice, setNotice] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isPreview, setIsPreview] = useState(false)
   const skipNextFetch = useRef(false)
   const [authForm, setAuthForm] = useState({
     email: '',
@@ -93,7 +40,7 @@ function App() {
     nickname: '',
   })
 
-  const isAuthed = Boolean(user && (tokenStore.access || isPreview))
+  const isAuthed = Boolean(user && tokenStore.access)
 
   useEffect(() => {
     getHealth()
@@ -133,17 +80,6 @@ function App() {
     return health?.message || '백엔드 연결 대기 중'
   }, [health])
 
-  // Preview-only handler: remove with the preview-only block above.
-  function handlePreview() {
-    setIsPreview(true)
-    setUser(previewUser)
-    setHealth({ status: 'ok', collections: { papers: 120, aux: 30 } })
-    setSessions([previewSession])
-    setActiveSession(previewSession)
-    setMessages(previewMessages)
-    setNotice('')
-  }
-
   async function refreshSessions() {
     const nextSessions = await getSessions()
     setSessions(nextSessions)
@@ -176,11 +112,8 @@ function App() {
 
   async function handleLogout() {
     try {
-      if (!isPreview) {
-        await logout()
-      }
+      await logout()
     } finally {
-      setIsPreview(false)
       setUser(null)
       setSessions([])
       setActiveSession(null)
@@ -194,14 +127,6 @@ function App() {
       return null
     }
 
-    if (isPreview) {
-      const session = createPreviewSession(initialQuestion ? initialQuestion.slice(0, 28) : undefined)
-      setSessions((current) => [session, ...current])
-      setActiveSession(session)
-      setMessages([])
-      return session
-    }
-
     const title = initialQuestion ? initialQuestion.slice(0, 28) : '새 채팅'
     const session = await createSession(title)
     setSessions((current) => [session, ...current])
@@ -210,13 +135,6 @@ function App() {
   }
 
   async function handleDeleteSession(session: ChatSession) {
-    if (isPreview) {
-      setSessions((current) => current.filter((item) => item.id !== session.id))
-      setActiveSession(null)
-      setMessages([])
-      return
-    }
-
     await deleteSession(session.id)
     const nextSessions = sessions.filter((item) => item.id !== session.id)
     setSessions(nextSessions)
@@ -243,15 +161,6 @@ function App() {
     setMessages((current) => [...current, optimisticUserMessage, loadingMessage])
 
     try {
-      if (isPreview) {
-        const assistantMessage = createPreviewAnswer()
-        window.setTimeout(() => {
-          setMessages((current) => [...current.slice(0, -1), assistantMessage])
-          setIsSending(false)
-        }, 450)
-        return
-      }
-
       if (!activeSession) skipNextFetch.current = true
       const session = activeSession ?? (await handleNewSession(content))
       const result = await ask(content, session?.id)
@@ -278,9 +187,8 @@ function App() {
       <main className="auth-screen">
         <section className="auth-panel" aria-label="BioRAG 로그인">
           <div className="brand-lockup">
-            <span className="brand-mark">BioRAG</span>
-            <h1>웰니스 인사이트</h1>
-            <p>PubMed 근거로 건강 궁금증을 쉽게 풀어드립니다.</p>
+            <h1>BioRAG</h1>
+            <p className="brand-lead">PubMed 논문 근거로 건강 궁금증을 쉽게 풀어드립니다.</p>
           </div>
 
           <form className="auth-form" onSubmit={handleAuthSubmit}>
@@ -344,13 +252,6 @@ function App() {
                 ? authMode === 'login' ? '로그인 중...' : '회원가입 중...'
                 : authMode === 'login' ? '로그인' : '가입하고 시작'}
             </button>
-
-            {/* Preview-only button: remove after backend auth is usable. */}
-            {import.meta.env.DEV && (
-              <button className="preview-button" type="button" onClick={handlePreview}>
-                채팅 화면 미리보기
-              </button>
-            )}
           </form>
         </section>
       </main>
