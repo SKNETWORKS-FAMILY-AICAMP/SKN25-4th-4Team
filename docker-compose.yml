@@ -47,6 +47,35 @@ services:
       - django
     restart: unless-stopped
 
+  airflow:
+    build:
+      context: ./airflow
+      dockerfile: Dockerfile
+    container_name: biorag-airflow
+    env_file:
+      - .env
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=sqlite:////opt/airflow/airflow.db
+      - AIRFLOW__CORE__LOAD_EXAMPLES=false
+      - AIRFLOW__WEBSERVER__SECRET_KEY=biorag-airflow-secret-2024
+      - AIRFLOW_HOME=/opt/airflow
+      - PYTHONPATH=/opt/biorag
+      - _AIRFLOW_WWW_USER_USERNAME=admin
+      - _AIRFLOW_WWW_USER_PASSWORD=admin1234
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./backend:/opt/biorag
+      - airflow-db:/opt/airflow
+      - chroma-data:/opt/biorag/data/chroma
+    ports:
+      - "8080:8080"
+    command: standalone
+    depends_on:
+      - fastapi
+    restart: unless-stopped
+
 volumes:
   chroma-data:
   django-data:
+  airflow-db:
