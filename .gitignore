@@ -13,6 +13,9 @@ build/
 backend/data/
 data/
 
+# Vite cache
+frontend/.vite/
+
 # IDE
 .idea/
 .vscode/
