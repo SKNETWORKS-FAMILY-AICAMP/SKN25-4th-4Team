@@ -337,6 +337,9 @@ function App() {
               <article key={`${message.role}-${index}`} className={`message ${message.role}`}>
                 <div className="message-bubble">
                   {message.role === 'assistant' ? (
+                    isSending && index === messages.length - 1 ? (
+                      <LoadingReport />
+                    ) : (
                     <div className="report">
                       <header className="report-header">
                         <h3>BioRAG 분석 리포트</h3>
@@ -349,6 +352,7 @@ function App() {
                         <SourceLinks sources={message.paper_sources} />
                       )}
                     </div>
+                    )
                   ) : (
                     <p>{message.content}</p>
                   )}
@@ -379,6 +383,27 @@ function App() {
         </form>
       </section>
     </main>
+  )
+}
+
+function LoadingReport() {
+  return (
+    <div className="report">
+      <header className="report-header">
+        <h3>BioRAG 분석 리포트</h3>
+      </header>
+      <div className="loading-state">
+        <div className="loading-dots">
+          <span /><span /><span />
+        </div>
+        <p className="loading-text">논문과 보조문서를 확인하고 있어요</p>
+        <div className="loading-skeleton">
+          <div className="skeleton-line wide" />
+          <div className="skeleton-line medium" />
+          <div className="skeleton-line narrow" />
+        </div>
+      </div>
+    </div>
   )
 }
 
