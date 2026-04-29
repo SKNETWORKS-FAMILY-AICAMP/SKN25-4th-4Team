@@ -6,7 +6,7 @@
 |---|---|
 | `wireframe.html` | 화면설계서 | 
 | `architecture.html` | 요구사항정의서 (시스템 구성도) | 
-| `테스트계획 및 결과보고서.md` | 테스트 계획 및 결과 보고서 | 
+| `test_report.md` | 테스트 계획 및 결과 보고서 | 
 ### HTML 파일 보는 방법
 
 > HTML 파일은 GitHub에서 바로 렌더링되지 않습니다.  
