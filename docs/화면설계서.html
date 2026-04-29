@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BioRAG 화면설계서</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:#f0f2f5;color:#1a1a2e;}
+
+.cover{background:linear-gradient(135deg,#0d2818 0%,#166534 50%,#14532d 100%);color:#fff;padding:60px 80px;display:flex;justify-content:space-between;align-items:flex-end;min-height:200px;}
+.cover-left h1{font-size:42px;font-weight:800;letter-spacing:-1px;}
+.cover-left p{font-size:16px;opacity:.7;margin-top:8px;}
+.cover-right{text-align:right;font-size:13px;opacity:.6;line-height:2;}
+
+.toc{background:#fff;padding:40px 80px;border-bottom:1px solid #e5e7eb;}
+.toc h2{font-size:18px;font-weight:700;color:#166534;margin-bottom:16px;}
+.toc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.toc-item{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px;cursor:pointer;transition:all .15s;}
+.toc-item:hover{background:#dcfce7;transform:translateY(-2px);}
+.toc-item .num{font-size:11px;font-weight:700;color:#166534;margin-bottom:4px;}
+.toc-item .title{font-size:13px;font-weight:600;color:#1a1a2e;}
+
+.section{padding:48px 80px;}
+.section-header{display:flex;align-items:center;gap:12px;margin-bottom:32px;padding-bottom:16px;border-bottom:2px solid #dcfce7;}
+.section-num{background:#166534;color:#fff;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;}
+.section-title{font-size:24px;font-weight:700;color:#166534;}
+.section-desc{font-size:13px;color:#6b7280;margin-top:2px;}
+
+.screen-wrap{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:48px;}
+.screen-wrap.single{grid-template-columns:1fr;}
+.screen-card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);}
+.screen-label{background:#1a1a2e;color:#fff;padding:10px 16px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;}
+.screen-label .dot{width:10px;height:10px;border-radius:50%;}
+.screen-label .dot.green{background:#22c55e;}
+.screen-label .dot.yellow{background:#f59e0b;}
+.screen-label .dot.red{background:#ef4444;}
+
+.anno-table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px;}
+.anno-table th{background:#f0fdf4;color:#166534;font-weight:700;padding:10px 14px;text-align:left;border:1px solid #dcfce7;}
+.anno-table td{padding:10px 14px;border:1px solid #e5e7eb;vertical-align:top;line-height:1.6;}
+.anno-table tr:hover td{background:#fafafa;}
+.tag-must{background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;}
+.tag-opt{background:#e0f2fe;color:#0369a1;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;}
+.tag-dev{background:#fef9c3;color:#854d0e;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;}
+
+.flow-wrap{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin:16px 0 32px;}
+.flow-box{background:#fff;border:1.5px solid #86efac;border-radius:10px;padding:10px 16px;font-size:12px;font-weight:600;color:#166534;text-align:center;min-width:100px;}
+.flow-arrow{font-size:18px;color:#86efac;padding:0 6px;}
+.flow-box.active{background:#166534;color:#fff;border-color:#166534;}
+.flow-box.gray{border-color:#d1d5db;color:#6b7280;}
+
+.mock-login{padding:40px 20px;display:flex;justify-content:center;background:#f7f8fc;min-height:420px;align-items:center;}
+.mock-card{background:#fff;border-radius:16px;padding:36px 32px;width:340px;box-shadow:0 4px 20px rgba(0,0,0,.1);}
+.mock-brand{text-align:center;margin-bottom:24px;}
+.mock-brand .emoji{font-size:32px;}
+.mock-brand h2{font-size:22px;font-weight:800;color:#166534;margin-top:4px;}
+.mock-brand p{font-size:11px;color:#9ca3af;margin-top:2px;}
+.mock-field{margin-bottom:14px;}
+.mock-field label{display:block;font-size:11px;font-weight:600;color:#374151;margin-bottom:5px;}
+.mock-input{width:100%;padding:10px 14px;border:1.5px solid #86efac;border-radius:8px;font-size:13px;color:#6b7280;background:#fafafa;}
+.mock-btn-primary{width:100%;padding:12px;background:#166534;color:#fff;border:none;border-radius:24px;font-size:13px;font-weight:700;margin-top:16px;cursor:pointer;}
+.mock-divider{display:flex;align-items:center;gap:8px;margin:14px 0;font-size:11px;color:#9ca3af;}
+.mock-divider::before,.mock-divider::after{content:'';flex:1;border-top:1px solid #e5e7eb;}
+.mock-btn-secondary{width:100%;padding:12px;background:#fff;color:#166534;border:1.5px solid #86efac;border-radius:24px;font-size:13px;font-weight:700;cursor:pointer;}
+.mock-link{text-align:center;font-size:11px;color:#9ca3af;margin-top:12px;}
+
+.mock-chat-wrap{display:flex;height:480px;overflow:hidden;}
+.mock-sidebar{width:200px;flex-shrink:0;background:linear-gradient(180deg,#f0fdf4,#dcfce7);border-right:1px solid #bbf7d0;padding:14px 10px;display:flex;flex-direction:column;gap:7px;}
+.mock-sidebar .s-brand{text-align:center;margin-bottom:4px;}
+.mock-sidebar .s-brand strong{font-size:14px;font-weight:800;color:#166534;display:block;}
+.mock-sidebar .s-brand span{font-size:9px;color:#6b7280;}
+.mock-badge{background:#dcfce7;color:#166534;font-size:9px;font-weight:700;padding:4px 8px;border-radius:6px;text-align:center;}
+.mock-new-btn{background:#fff;border:1px solid #86efac;border-radius:14px;padding:6px 10px;font-size:11px;font-weight:600;color:#166534;text-align:center;}
+.mock-sec-label{font-size:9px;color:#9ca3af;font-weight:700;margin-top:4px;}
+.mock-ex-btn{background:#fff;border:1px solid #d1fae5;border-radius:7px;padding:5px 8px;font-size:10px;color:#374151;text-align:left;}
+.mock-main{flex:1;display:flex;flex-direction:column;min-width:0;}
+.mock-main-header{background:#fff;padding:10px 16px;border-bottom:1px solid #e8ebf5;}
+.mock-main-header strong{font-size:13px;font-weight:700;color:#166534;}
+.mock-main-header p{font-size:9px;color:#9ca3af;}
+.mock-messages{flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:10px;overflow:hidden;background:#f7f8fc;}
+.mock-user-msg{align-self:flex-end;background:#166534;color:#fff;padding:8px 12px;border-radius:16px 16px 3px 16px;font-size:11px;max-width:70%;}
+.mock-bot-card{background:#fff;border:1px solid #e8ebf5;border-radius:3px 14px 14px 14px;padding:12px 14px;max-width:85%;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.mock-bot-card .card-title{font-size:11px;font-weight:700;color:#166534;border-bottom:1px solid #dcfce7;padding-bottom:6px;margin-bottom:7px;}
+.mock-badge-ok{display:inline-block;background:#dcfce7;color:#166534;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;margin-bottom:5px;}
+.mock-badge-weak{display:inline-block;background:#fef9c3;color:#854d0e;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;margin-bottom:5px;}
+.mock-badge-none{display:inline-block;background:#fee2e2;color:#991b1b;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;margin-bottom:5px;}
+.mock-score{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.mock-score span{font-size:9px;color:#64748b;font-weight:600;min-width:44px;}
+.mock-score-bg{flex:1;height:4px;background:#e2e8f0;border-radius:2px;}
+.mock-score-fill{height:100%;border-radius:2px;}
+.mock-body-text{font-size:10px;color:#374151;line-height:1.6;margin-bottom:6px;}
+.mock-pills{display:flex;gap:4px;flex-wrap:wrap;}
+.mock-pill{background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;}
+.mock-input-area{background:#fff;border-top:1px solid #e8ebf5;padding:10px 14px;display:flex;gap:8px;}
+.mock-input-field{flex:1;border:1.5px solid #86efac;border-radius:18px;padding:7px 12px;font-size:11px;color:#9ca3af;background:#fff;}
+.mock-send-btn{background:#166534;color:#fff;border:none;border-radius:18px;padding:7px 14px;font-size:11px;font-weight:600;}
+
+.divider-section{height:1px;background:linear-gradient(90deg,transparent,#dcfce7,transparent);margin:0 80px;}
+
+@media(max-width:900px){
+  .cover{padding:40px 24px;flex-direction:column;gap:16px;}
+  .toc{padding:24px;}
+  .toc-grid{grid-template-columns:1fr 1fr;}
+  .section{padding:32px 24px;}
+  .screen-wrap{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cover-left">
+    <h1>🌿 BioRAG</h1>
+    <p>LLM 연동 논문 기반 질의응답 웹페이지 — 화면설계서</p>
+  </div>
+  <div class="cover-right">
+    <div>SKN25-4th-4Team</div>
+    <div>버전 1.0</div>
+    <div>2026</div>
+  </div>
+</div>
+
+<div class="toc">
+  <h2>📋 목차</h2>
+  <div class="toc-grid">
+    <div class="toc-item"><div class="num">01</div><div class="title">로그인 / 회원가입</div></div>
+    <div class="toc-item"><div class="num">02</div><div class="title">메인 채팅 화면</div></div>
+    <div class="toc-item"><div class="num">03</div><div class="title">분석 리포트 카드 — 3가지 상태</div></div>
+    <div class="toc-item"><div class="num">04</div><div class="title">사용자 플로우</div></div>
+  </div>
+</div>
+
+<!-- SECTION 1: 로그인 -->
+<div class="section" style="background:#fff;">
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <div>
+      <div class="section-title">로그인 / 회원가입</div>
+      <div class="section-desc">사용자 인증 페이지 — 로그인 후 메인 채팅 화면으로 이동</div>
+    </div>
+  </div>
+
+  <div class="screen-wrap">
+    <div class="screen-card">
+      <div class="screen-label">
+        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+        &nbsp;로그인 페이지 → /login
+      </div>
+      <div class="mock-login">
+        <div class="mock-card">
+          <div class="mock-brand">
+            <div class="emoji">🌿</div>
+            <h2>BioRAG</h2>
+            <p>논문 기반 건강 팩트체커</p>
+          </div>
+          <div class="mock-field">
+            <label>이메일</label>
+            <div class="mock-input">example@email.com</div>
+          </div>
+          <div class="mock-field">
+            <label>비밀번호</label>
+            <div class="mock-input">••••••••</div>
+          </div>
+          <button class="mock-btn-primary">로그인</button>
+          <div class="mock-divider">또는</div>
+          <button class="mock-btn-secondary">회원가입</button>
+          <div class="mock-link">비밀번호를 잊으셨나요?</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen-card">
+      <div class="screen-label">
+        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+        &nbsp;회원가입 페이지 → /signup
+      </div>
+      <div class="mock-login">
+        <div class="mock-card">
+          <div class="mock-brand">
+            <div class="emoji">🌿</div>
+            <h2>BioRAG</h2>
+            <p>논문 기반 건강 팩트체커</p>
+          </div>
+          <div class="mock-field">
+            <label>이름</label>
+            <div class="mock-input">홍길동</div>
+          </div>
+          <div class="mock-field">
+            <label>이메일</label>
+            <div class="mock-input">example@email.com</div>
+          </div>
+          <div class="mock-field">
+            <label>비밀번호</label>
+            <div class="mock-input">••••••••</div>
+          </div>
+          <div class="mock-field">
+            <label>비밀번호 확인</label>
+            <div class="mock-input">••••••••</div>
+          </div>
+          <button class="mock-btn-primary">회원가입 완료</button>
+          <div class="mock-link" style="margin-top:10px;">이미 계정이 있으신가요? <span style="color:#166534;font-weight:600;">로그인</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <table class="anno-table">
+    <tr><th>번호</th><th>구성요소</th><th>설명</th><th>구분</th></tr>
+    <tr><td>①</td><td>로고 영역</td><td>BioRAG 브랜드명, 서비스 설명 표시</td><td><span class="tag-must">필수</span></td></tr>
+    <tr><td>②</td><td>이메일 입력</td><td>사용자 이메일 입력 필드, 형식 유효성 검사</td><td><span class="tag-must">필수</span></td></tr>
+    <tr><td>③</td><td>비밀번호 입력</td><td>비밀번호 입력, 눈 아이콘으로 표시/숨김 토글</td><td><span class="tag-must">필수</span></td></tr>
+    <tr><td>④</td><td>로그인 버튼</td><td>Django authenticate() 호출, 실패 시 오류 메시지 표시</td><td><span class="tag-must">필수</span></td></tr>
+    <tr><td>⑤</td><td>회원가입 이동</td><td>/signup 페이지로 이동</td><td><span class="tag-must">필수</span></td></tr>
+    <tr><td>⑥</td><td>이름 입력</td><td>회원가입 시 사용자명 저장</td><td><span class="tag-dev">개발됨</span></td></tr>
+    <tr><td>⑦</td><td>비밀번호 확인</td><td>두 비밀번호 일치 여부 실시간 검증</td><td><span class="tag-dev">개발됨</span></td></tr>
+  </table>
+</div>
+
+<div class="divider-section"></div>
+
+<!-- SECTION 2: 메인 채팅 -->
+<div class="section" style="background:#fafafa;">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <div>
+      <div class="section-title">메인 채팅 화면</div>
+      <div class="section-desc">로그인 후 진입하는 메인 화면 — 사이드바 + 채팅 영역</div>
+    </div>
+  </div>
+
+  <div class="screen-wrap single">
+    <div class="screen-card">
+      <div class="screen-label">
+        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+        &nbsp;메인 채팅 → / (1440 × 900)
+      </div>
+      <div class="mock-chat-wrap">
+        <div class="mock-sidebar">
+          <div class="s-brand">
+            <strong>BioRAG</strong>
+            <span>논문 기반 건강 팩트체커</span>
+          </div>
+          <div class="mock-badge">서버 연결됨 · 논문 333개 · 보조 120개</div>
+          <div class="mock-new-btn">✏️ 새 채팅</div>
+          <div class="mock-sec-label">예시 질문</div>
+          <div class="mock-ex-btn">💬 마운자로 효과</div>
+          <div class="mock-ex-btn">💬 사레샷 효과 있어?</div>
+          <div class="mock-ex-btn">💬 콜라겐이 피부에 도움이 돼?</div>
+          <div class="mock-ex-btn">💬 공복에 레몬물 마시면 좋아?</div>
+          <div class="mock-sec-label" style="margin-top:8px;">대화 기록</div>
+          <div class="mock-ex-btn">📄 마운자로 효과</div>
+          <div class="mock-ex-btn">📄 사레샷 질문</div>
+        </div>
+        <div class="mock-main">
+          <div class="mock-main-header">
+            <strong>BioRAG 🌿</strong>
+            <p>논문 기반 건강 팩트체커 — PubMed + MedlinePlus + Glossary</p>
+          </div>
+          <div class="mock-messages">
+            <div style="display:flex;justify-content:flex-end;">
+              <div class="mock-user-msg">마운자로 부작용은?</div>
+            </div>
+            <div class="mock-bot-card">
+              <div class="card-title">🌿 BioRAG 분석 리포트</div>
+              <div class="mock-badge-ok">◎ 논문 근거 있음</div>
+              <div class="mock-score">
+                <span>논문 관련도</span>
+                <div class="mock-score-bg"><div class="mock-score-fill" style="width:85%;background:#22c55e;"></div></div>
+                <span style="min-width:28px;text-align:right;">85%</span>
+              </div>
+              <div class="mock-body-text">SURMOUNT-1 임상시험(2023)에 따르면 티르제파타이드(마운자로) 투여 시 오심, 구토 등 위장관 부작용이 가장 흔하게...</div>
+              <div class="mock-pills">
+                <span class="mock-pill">NEJM 2023</span>
+                <span class="mock-pill">Lancet 2024</span>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;">
+              <div class="mock-user-msg">올레샷 효과 있어?</div>
+            </div>
+            <div class="mock-bot-card">
+              <div class="card-title">🌿 BioRAG 분석 리포트</div>
+              <div class="mock-badge-none">✕ 직접 근거 없음</div>
+              <div class="mock-body-text">올레샷(올리브오일+레몬즙) 조합에 대한 직접적인 임상시험은 현재 존재하지 않습니다. 다만 올리브오일 단독 연구(EVOO)에서...</div>
+            </div>
+          </div>
+          <div class="mock-input-area">
+            <div class="mock-input-field">건강 트렌드에 대해 질문해보세요!</div>
+            <div class="mock-send-btn">전송</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <table class="anno-table">
+    <tr><th>번호</th><th>구성요소</th><th>설명</th><th>구분</th></tr>
+    <tr><td>①</td><td>사이드바 — 브랜드</td><td>BioRAG 로고, 서버 상태 배지 (논문 수 실시간 표시)</td><td><span class="tag-must">필수</span></td></tr>
+    <tr><td>②</td><td>사이드바 — 새 채팅</td><td>대화 초기화, 세션 생성</td><td><span class="tag-must">필수</span></td></tr>
+    <tr><td>③</td><td>사이드바 — 예시 질문</td><td>클릭 시 입력창에 자동 입력</td><td><span class="tag-must">필수</span></td></tr>
+    <tr><td>④</td><td>사이드바 — 대화 기록</td><td>사용자별 이전 대화 목록 (로그인 연동)</td><td><span class="tag-dev">개발됨</span></td></tr>
+    <tr><td>⑤</td><td>사용자 말풍선</td><td>우측 정렬, 초록 배경, 사용자 입력 표시</td><td><span class="tag-must">필수</span></td></tr>
+    <tr><td>⑥</td><td>BioRAG 분석 리포트 카드</td><td>좌측 정렬, 배지+스코어바+출처 pill 포함 (Section 03 참조)</td><td><span class="tag-must">필수</span></td></tr>
+    <tr><td>⑦</td><td>입력창</td><td>Enter 키 / 전송 버튼으로 질문 제출, 전송 중 비활성화</td><td><span class="tag-must">필수</span></td></tr>
+    <tr><td>⑧</td><td>로딩 애니메이션</td><td>응답 대기 중 점 3개 바운스 + 스켈레톤 shimmer</td><td><span class="tag-must">필수</span></td></tr>
+  </table>
+</div>
+
+<div class="divider-section"></div>
+
+<!-- SECTION 3: 분석 리포트 카드 3가지 상태 -->
+<div class="section" style="background:#fff;">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <div>
+      <div class="section-title">분석 리포트 카드 — 3가지 상태</div>
+      <div class="section-desc">논문 근거 여부에 따라 3가지 형태로 렌더링</div>
+    </div>
+  </div>
+
+  <div class="screen-wrap" style="grid-template-columns:1fr 1fr 1fr;">
+
+    <div class="screen-card">
+      <div class="screen-label" style="background:#166534;">
+        <span class="dot green"></span>&nbsp;상태 1 — 논문 근거 있음 (직접)
+      </div>
+      <div style="padding:20px;background:#f7f8fc;">
+        <div style="background:#fff;border:1px solid #e8ebf5;border-radius:4px 16px 16px 16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+          <div style="font-size:13px;font-weight:700;color:#166534;border-bottom:1px solid #dcfce7;padding-bottom:8px;margin-bottom:10px;">🌿 BioRAG 분석 리포트</div>
+          <div style="display:inline-flex;align-items:center;background:#dcfce7;color:#166534;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px;">◎ 논문 근거 있음</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+            <span style="font-size:10px;color:#64748b;font-weight:600;min-width:52px;">논문 관련도</span>
+            <div style="flex:1;height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden;"><div style="width:85%;height:100%;background:#22c55e;border-radius:3px;"></div></div>
+            <span style="font-size:10px;color:#64748b;font-weight:600;">85%</span>
+          </div>
+          <div style="font-size:12px;color:#374151;line-height:1.7;margin-bottom:10px;">SURMOUNT-1 임상시험(2023)에 따르면 티르제파타이드 15mg 투여군에서 평균 체중의 20.9%가 감소하였으며...</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;">
+            <span style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;">NEJM 2023</span>
+            <span style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;">Lancet 2024</span>
+          </div>
+        </div>
+        <div style="margin-top:10px;font-size:10px;color:#9ca3af;">※ 논문 출처 pill 클릭 시 PubMed 링크 이동</div>
+      </div>
+    </div>
+
+    <div class="screen-card">
+      <div class="screen-label" style="background:#854d0e;">
+        <span class="dot yellow"></span>&nbsp;상태 2 — 간접 근거
+      </div>
+      <div style="padding:20px;background:#f7f8fc;">
+        <div style="background:#fff;border:1px solid #e8ebf5;border-radius:4px 16px 16px 16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+          <div style="font-size:13px;font-weight:700;color:#166534;border-bottom:1px solid #dcfce7;padding-bottom:8px;margin-bottom:10px;">🌿 BioRAG 분석 리포트</div>
+          <div style="display:inline-flex;align-items:center;background:#fef9c3;color:#854d0e;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px;">△ 간접 근거</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+            <span style="font-size:10px;color:#64748b;font-weight:600;min-width:52px;">논문 관련도</span>
+            <div style="flex:1;height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden;"><div style="width:52%;height:100%;background:#d4a000;border-radius:3px;"></div></div>
+            <span style="font-size:10px;color:#64748b;font-weight:600;">52%</span>
+          </div>
+          <div style="font-size:12px;color:#374151;line-height:1.7;margin-bottom:10px;">아세트산(사과식초)의 직접 관련된 대규모 임상 연구는 제한적입니다. 소규모 연구에서...</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;">
+            <span style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;">Nutrients 2025</span>
+          </div>
+        </div>
+        <div style="margin-top:10px;font-size:10px;color:#9ca3af;">※ 관련도 52% 미만이면 amber 바 표시</div>
+      </div>
+    </div>
+
+    <div class="screen-card">
+      <div class="screen-label" style="background:#991b1b;">
+        <span class="dot red"></span>&nbsp;상태 3 — 직접 근거 없음
+      </div>
+      <div style="padding:20px;background:#f7f8fc;">
+        <div style="background:#fff;border:1px solid #e8ebf5;border-radius:4px 16px 16px 16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+          <div style="font-size:13px;font-weight:700;color:#166534;border-bottom:1px solid #dcfce7;padding-bottom:8px;margin-bottom:10px;">🌿 BioRAG 분석 리포트</div>
+          <div style="display:inline-flex;align-items:center;background:#fee2e2;color:#991b1b;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px;">✕ 직접 근거 없음</div>
+          <div style="font-size:12px;color:#374151;line-height:1.7;margin-bottom:10px;">올레샷(올리브오일+레몬즙) 조합에 대한 직접적인 임상시험은 현재 존재하지 않습니다. 다만 올리브오일 단독 연구(EVOO)에서...</div>
+          <div style="background:#fffbeb;border-radius:8px;padding:8px 10px;font-size:11px;color:#92400e;">⚠️ 의사 또는 약사와 상담을 권장합니다.</div>
+        </div>
+        <div style="margin-top:10px;font-size:10px;color:#9ca3af;">※ 근거 없음 시 스코어바 미표시, 면책 문구 자동 삽입</div>
+      </div>
+    </div>
+  </div>
+
+  <table class="anno-table">
+    <tr><th>구성요소</th><th>논문 근거 있음</th><th>간접 근거</th><th>직접 근거 없음</th></tr>
+    <tr><td>배지</td><td>◎ 초록 (#dcfce7)</td><td>△ 노랑 (#fef9c3)</td><td>✕ 빨강 (#fee2e2)</td></tr>
+    <tr><td>스코어바 색상</td><td>초록 (#22c55e)</td><td>노랑 (#d4a000)</td><td>미표시</td></tr>
+    <tr><td>출처 pill</td><td>최대 5개 PubMed 링크</td><td>1~2개</td><td>미표시</td></tr>
+    <tr><td>면책 문구</td><td>미표시</td><td>미표시</td><td>⚠️ 자동 삽입</td></tr>
+    <tr><td>로딩 애니메이션</td><td colspan="3">점 3개 바운스 + 스켈레톤 shimmer (공통)</td></tr>
+  </table>
+</div>
+
+<div class="divider-section"></div>
+
+<!-- SECTION 4: 사용자 플로우 -->
+<div class="section" style="background:#fafafa;">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <div>
+      <div class="section-title">사용자 플로우 (User Flow)</div>
+      <div class="section-desc">비로그인 / 로그인 사용자 플로우 분기</div>
+    </div>
+  </div>
+
+  <div style="background:#fff;border-radius:16px;padding:32px;margin-bottom:32px;border:1px solid #e5e7eb;">
+    <div style="font-size:13px;font-weight:700;color:#166534;margin-bottom:16px;">① 비로그인 사용자 플로우</div>
+    <div class="flow-wrap">
+      <div class="flow-box active">접속</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box active">로그인 페이지</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">로그인 성공</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">메인 채팅</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">질문 입력</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">RAG 분석</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">리포트 출력</div>
+    </div>
+
+    <div style="font-size:13px;font-weight:700;color:#166534;margin:24px 0 16px;">② 로그인 사용자 플로우</div>
+    <div class="flow-wrap">
+      <div class="flow-box active">접속</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box active">세션 확인</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box active">메인 채팅</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">질문 입력</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">RAG 분석</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">리포트 출력</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box" style="background:#fef9c3;border-color:#f59e0b;color:#854d0e;">DB 저장 ★</div>
+    </div>
+
+    <div style="font-size:13px;font-weight:700;color:#166534;margin:24px 0 16px;">③ RAG 파이프라인 내부 플로우</div>
+    <div class="flow-wrap">
+      <div class="flow-box active">질문 입력</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">신조어 감지<br><span style="font-size:9px;color:#9ca3af;">glossary_matcher</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">카테고리 분류<br><span style="font-size:9px;color:#9ca3af;">category_router</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">ChromaDB 검색<br><span style="font-size:9px;color:#9ca3af;">retriever</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">근거 평가<br><span style="font-size:9px;color:#9ca3af;">assess_retrieval</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box gray">웹 검색 fallback<br><span style="font-size:9px;color:#9ca3af;">Tavily (조건부)</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">GPT-4o 생성<br><span style="font-size:9px;color:#9ca3af;">LLM</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box active">한국어 재작성<br><span style="font-size:9px;color:#9ca3af;">korean_rewriter</span></div>
+    </div>
+  </div>
+
+  <table class="anno-table">
+    <tr><th>페이지</th><th>URL</th><th>접근 권한</th><th>연결 페이지</th></tr>
+    <tr><td>로그인</td><td>/login</td><td>비로그인만</td><td>회원가입, 메인</td></tr>
+    <tr><td>회원가입</td><td>/signup</td><td>비로그인만</td><td>로그인</td></tr>
+    <tr><td>메인 채팅</td><td>/</td><td>로그인 필수</td><td>로그아웃→로그인</td></tr>
+    <tr><td>헬스체크 API</td><td>/api/health/</td><td>서버 내부</td><td>—</td></tr>
+    <tr><td>질의응답 API</td><td>/api/ask/</td><td>로그인 필수</td><td>—</td></tr>
+    <tr><td>스트리밍 API</td><td>/api/ask/stream/</td><td>로그인 필수</td><td>—</td></tr>
+  </table>
+</div>
+
+<div style="background:#0d2818;color:rgba(255,255,255,.5);text-align:center;padding:20px;font-size:12px;">
+  BioRAG 화면설계서 v1.0 — SKN25-4th-4Team
+</div>
+
+</body>
+</html>
